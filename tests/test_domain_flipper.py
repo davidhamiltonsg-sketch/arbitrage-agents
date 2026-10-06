@@ -255,10 +255,15 @@ class DiligenceTests(unittest.TestCase):
     def test_trademark_screen(self):
         from agents.domain_flipper import diligence
         self.assertEqual(diligence.trademark_screen("lumenpath.com")["risk"], "low")
-        hit = diligence.trademark_screen("bestnikeshoes.com")
-        self.assertEqual(hit["risk"], "high")
-        self.assertIn("nike", hit["flags"])
-        self.assertIn("query=bestnikeshoes", hit["links"]["uspto"])
+        mid = diligence.trademark_screen("bestnikeshoes.com")
+        self.assertEqual(mid["risk"], "medium")
+        self.assertIn("nike", mid["flags"])
+        self.assertIn("query=bestnikeshoes", mid["links"]["uspto"])
+        self.assertEqual(diligence.trademark_screen("nikeoutlet.com")["risk"], "high")
+        self.assertEqual(diligence.trademark_screen("bestpixarmovies.com")["risk"], "high")
+        self.assertEqual(diligence.trademark_screen("climbing.com")["risk"], "medium")
+        self.assertEqual(diligence.trademark_screen("stamped.com")["risk"], "low")  # "amd" is too short to count mid-word
+        self.assertEqual(diligence.trademark_screen("hp.com")["risk"], "high")
 
     def test_export_and_dry_run_diligence(self):
         sender = StdoutSender(io.StringIO())

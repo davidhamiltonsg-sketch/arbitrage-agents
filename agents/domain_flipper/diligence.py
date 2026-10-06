@@ -84,13 +84,16 @@ def summarise_cdx(domain: str, payload: Any) -> dict[str, Any]:
 def trademark_screen(domain: str) -> dict[str, Any]:
     """Cheap in-process screen plus prefilled registry searches."""
     sld = domain.split(".")[0].lower()
-    flags = [m for m in FAMOUS_MARKS if len(m) >= 3 and m in sld]
-    # Exact match to a famous mark is worse than containing one.
-    exact = sld in FAMOUS_MARKS
-    if exact:
+    # Marks under 4 letters only count as an exact match ("hp", "ups", "amd" occur inside ordinary words).
+    flags = [m for m in FAMOUS_MARKS if (m == sld) or (len(m) >= 4 and m in sld)]
+    if sld in FAMOUS_MARKS:
+        risk = "high"
+    elif any(len(m) >= 5 or sld.startswith(m) or sld.endswith(m) for m in flags):
+        # A long mark anywhere, or a short one at the start or end ("nikeoutlet", "bestnike"), is a likely conflict.
         risk = "high"
     elif flags:
-        risk = "high" if any(len(m) >= 5 for m in flags) else "medium"
+        # A 4-letter mark mid-word ("climbing" has "bing") needs a human look.
+        risk = "medium"
     else:
         risk = "low"
     q = urllib.parse.quote(sld, safe="")
