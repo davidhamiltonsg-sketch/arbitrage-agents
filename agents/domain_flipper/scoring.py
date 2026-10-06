@@ -24,7 +24,10 @@ USER_TEMPLATE = """Evaluate the following metrics:
 Domain: {domain}
 Domain Rating (DR): {dr}
 Referring Domains: {referring_domains}
-Total Backlinks: {total_backlinks}"""
+Total Backlinks: {total_backlinks}
+Backlink spam score (0-100, lower is cleaner): {spam_score}
+Market appraisal (GoDaddy GoValue, USD): {appraisal}
+Comparable sales: {comparables}"""
 
 # Ranges are documented in descriptions and enforced in code: strict mode
 # rejects minimum/maximum keywords.
@@ -54,11 +57,16 @@ def score_domain(record: dict[str, Any], llm: LLMClient) -> dict[str, Any]:
     def show(value: Any) -> Any:
         return "unknown" if value is None else value
 
+    appraisal = record.get("appraisal") or {}
+    comps = appraisal.get("comparables") or []
     user = USER_TEMPLATE.format(
         domain=record["domain"],
         dr=show(record.get("dr")),
         referring_domains=show(record.get("referring_domains")),
         total_backlinks=show(record.get("total_backlinks")),
+        spam_score=show(record.get("spam_score")),
+        appraisal=show(appraisal.get("value")),
+        comparables=", ".join(f"{c['domain']} ${c['price']:,}" + (f" ({c['year']})" if c.get("year") else "") for c in comps[:5]) or "unknown",
     )
     raw = llm.structured(system=SYSTEM_PROMPT, user=user, schema_name=SCHEMA_NAME, schema=SCHEMA)
     return normalise_scores(raw)

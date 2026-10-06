@@ -24,13 +24,22 @@ def metrics_line(item: dict[str, Any]) -> str:
         rank = item.get("rank")
         rank_text = f" | global rank *#{rank:,}*" if isinstance(rank, int) else ""
         return f"Metrics: *authority {dr:g}/100* (Open PageRank){rank_text}"
-    return f"Metrics: *DR {dr:g}* | *{item.get('referring_domains', 0)} Ref Domains* | *{item.get('total_backlinks', 0)} Backlinks*"
+    spam = item.get("spam_score")
+    spam_text = f" | spam {spam:g}" if isinstance(spam, (int, float)) else ""
+    return f"Metrics: *DR {dr:g}* | *{item.get('referring_domains', 0)} Ref Domains* | *{item.get('total_backlinks', 0)} Backlinks*{spam_text}"
 
 
 def diligence_lines(item: dict[str, Any]) -> str:
-    from . import diligence
+    from . import availability, diligence
 
     out = []
+    a = item.get("availability")
+    if a:
+        icon = {"available": "✅", "sample": "✅", "pending-delete": "⏳", "taken": "⛔"}.get(a.get("status"), "❓")
+        out.append(f"• Availability: {icon} {slack.escape(availability.describe(a))}")
+    ap = item.get("appraisal")
+    if ap and ap.get("status") != "unconfigured":
+        out.append(f"• Appraisal: {slack.escape(diligence.describe_appraisal(ap))}")
     w = item.get("wayback")
     if w:
         text = diligence.describe_wayback(w)

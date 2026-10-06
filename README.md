@@ -21,7 +21,9 @@ The Domain Flipper runs live with **no paid keys**:
 | Piece | Free option (default) | Paid option |
 | --- | --- | --- |
 | Dropped-domain feed | WhoisFreaks' public GitHub sample: 10,000 dropped domains a day, partial gTLD coverage, no key (`DOMAIN_SOURCE=whoisfreaks-free`) | WhoisFreaks Domainer package: ~400,000 a day, all TLDs (`DOMAIN_SOURCE=whoisfreaks` + `WHOISFREAKS_API_KEY`) |
-| Authority metrics | Open PageRank: free API key, 0 to 10 score from the Common Crawl host graph, no link counts (`AUTHORITY_SOURCE=openpagerank` + `OPENPAGERANK_API_KEY`) | DataForSEO: DR-like rank plus referring domains and backlinks (`AUTHORITY_SOURCE=dataforseo` + credentials) |
+| Authority metrics | Open PageRank: free API key, 0 to 10 score from the Common Crawl host graph, no link counts (`AUTHORITY_SOURCE=openpagerank` + `OPENPAGERANK_API_KEY`) | DataForSEO: DR-like rank plus referring domains, backlinks and spam score. With both keys set, Open PageRank gates the whole field and DataForSEO goes deep on the top `DOMAIN_MAX_DEEP_ENRICH` (25) names only, so the metered spend stays at a few cents a run |
+| Availability | Registry RDAP lookup, no key: names a drop-catcher already re-registered are dropped before scoring; "pending delete" names are flagged for a backorder (`DOMAIN_AVAILABILITY_CHECK=rdap`, cap `DOMAIN_MAX_AVAILABILITY=150`) | – |
+| Appraisal | GoDaddy GoValue estimate with comparable sales, free with a production API key from developer.godaddy.com (`GODADDY_API_KEY` + `GODADDY_API_SECRET`); the model sees it before scoring | – |
 | Scoring | Built-in rubric heuristic | OpenAI structured output (`OPENAI_API_KEY`) |
 | Delivery | GitHub issue + run summary | Slack webhook on top |
 
@@ -83,8 +85,9 @@ from the GitHub mobile app or a phone browser.
 
 1. **Add keys** (all optional) at *Settings → Secrets and variables → Actions →
    New repository secret*. Free and most useful first: `OPENPAGERANK_API_KEY`.
+   Also free: `GODADDY_API_KEY` and `GODADDY_API_SECRET` for appraisals.
    Paid upgrades: `WHOISFREAKS_API_KEY` (Domainer package), `DATAFORSEO_LOGIN`
-   and `DATAFORSEO_PASSWORD`, and `OPENAI_API_KEY` for AI scoring. For the SaaS Scout also
+   and `DATAFORSEO_PASSWORD` (both needed, used on the top names only), and `OPENAI_API_KEY` for AI scoring. For the SaaS Scout also
    `SAAS_LISTINGS_URL` (a URL that returns the listings JSON, such as an Apify
    dataset items URL) and optionally `BUILTWITH_API_KEY`, `SIMILARWEB_API_KEY`.
    Thresholds such as `DOMAIN_TOP_N` go under *Variables* instead of secrets.
@@ -106,8 +109,8 @@ scorer, no listings URL makes the SaaS Scout fall back to a dry run.
 A private Claude artifact, the **Arbitrage Console**, reads this repository
 through your claude.ai GitHub connector and needs no server of its own:
 
-- the latest shortlist from `data/domain-flipper/latest.json` with authority,
-  Wayback history (first and last archived year, monthly snapshots, links to
+- the latest shortlist from `data/domain-flipper/latest.json` with registry
+  availability, authority, the GoDaddy appraisal, Wayback history (first and last archived year, monthly snapshots, links to
   the timeline and the latest copy) and the trademark screen with prefilled
   USPTO, WIPO and EUIPO searches;
 - **Bought** / **Pass** decisions kept in the artifact's own store, so they

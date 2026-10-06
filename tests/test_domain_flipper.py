@@ -282,7 +282,109 @@ class DiligenceTests(unittest.TestCase):
         self.assertIn("Trademark:", sender.sent[0]["blocks"][2]["text"]["text"])
 
 
+class AvailabilityTests(unittest.TestCase):
+    def test_bootstrap_parsing_prefers_https_and_keeps_known_bases(self):
+        from agents.domain_flipper import availability
+        boot = {"services": [[["ai"], ["http://plain.example/", "https://rdap.nic.ai/"]], [["xyz"], ["https://rdap.example/xyz"]], ["bad"]]}
+        bases = availability.rdap_bases(boot)
+        self.assertEqual(bases["ai"], "https://rdap.nic.ai/")
+        self.assertEqual(bases["xyz"], "https://rdap.example/xyz/")
+        with mock.patch.object(availability.http, "get_json", return_value=boot):
+            merged = availability.load_rdap_bases(None)
+        self.assertEqual(merged["com"], "https://rdap.verisign.com/com/v1/")
+        self.assertEqual(merged["ai"], "https://rdap.nic.ai/")
+        with mock.patch.object(availability.http, "get_json", side_effect=availability.http.HttpError("down", status=503)):
+            self.assertEqual(availability.load_rdap_bases(None), availability.KNOWN_RDAP_BASES)
+
+    def test_404_means_available_and_200_is_parsed(self):
+        from agents.domain_flipper import availability
+        seen = []
+
+        def not_found(url):
+            seen.append(url)
+            raise availability.http.HttpError("HTTP 404", status=404)
+
+        free = availability.check_availability("lumenpath.com", fetch=not_found)
+        self.assertEqual(free["status"], "available")
+        self.assertEqual(seen, ["https://rdap.verisign.com/com/v1/domain/lumenpath.com"])
+        registered = {
+            "status": ["client delete prohibited", "client transfer prohibited"],
+            "events": [{"eventAction": "registration", "eventDate": "2026-10-06T04:01:00Z"}, {"eventAction": "expiration", "eventDate": "2027-10-06T04:01:00Z"}],
+            "entities": [{"roles": ["registrar"], "vcardArray": ["vcard", [["version", {}, "text", "4.0"], ["fn", {}, "text", "Drop Catcher LLC"]]]}],
+        }
+        taken = availability.check_availability("lumenpath.com", fetch=lambda url: registered)
+        self.assertEqual(taken["status"], "taken")
+        self.assertEqual(taken["registrar"], "Drop Catcher LLC")
+        self.assertEqual(taken["registered"], "2026-10-06T04:01:00Z")
+        self.assertIn("Drop Catcher", availability.describe(taken))
+        pending = availability.check_availability("lumenpath.com", fetch=lambda url: {"status": ["pending delete"]})
+        self.assertEqual(pending["status"], "pending-delete")
+        self.assertIn("backorder", availability.describe(pending))
+
+    def test_errors_and_unknown_tlds_never_raise(self):
+        from agents.domain_flipper import availability
+        flaky = availability.check_availability("lumenpath.com", fetch=lambda url: (_ for _ in ()).throw(availability.http.HttpError("HTTP 429", status=429)))
+        self.assertEqual(flaky["status"], "unknown")
+        self.assertIn("429", flaky["note"])
+        self.assertEqual(availability.check_availability("name.zz", bases={})["status"], "unknown")
+        self.assertEqual(availability.check_availability("x.com", fetch=lambda url: "garbage")["status"], "unknown")
+        self.assertEqual(availability.sample_availability("x.com")["status"], "sample")
+
+
+class AppraisalTests(unittest.TestCase):
+    def test_parse_and_describe(self):
+        from agents.domain_flipper import diligence
+        payload = {"domain": "lumenpath.com", "govalue": 1234.4, "comparable_sales": [{"domain": "lumen.io", "price": "900", "year": 2023}, {"nodomain": 1}],
+                   "reasons": [{"type": "COMPS", "description": "Similar names sold recently"}, "short"]}
+        parsed = diligence.parse_appraisal(payload)
+        self.assertEqual(parsed["value"], 1234)
+        self.assertEqual(parsed["comparables"], [{"domain": "lumen.io", "price": 900, "year": 2023}])
+        self.assertEqual(parsed["reasons"], ["Similar names sold recently", "short"])
+        text = diligence.describe_appraisal({**parsed, "status": "ok"})
+        self.assertIn("$1,234", text)
+        self.assertIn("lumen.io $900 (2023)", text)
+        self.assertEqual(diligence.parse_appraisal({"govalue": "n/a"})["status"], "none")
+
+    def test_appraise_handles_auth_and_caches(self):
+        from agents.domain_flipper import diligence
+        self.assertIsNone(diligence.godaddy_auth_header("k", None))
+        self.assertEqual(diligence.godaddy_auth_header(" k ", "s"), "sso-key k:s")
+        calls = []
+
+        def ok(url):
+            calls.append(url)
+            return {"govalue": 500, "comparable_sales": []}
+
+        cache = Cache(":memory:")
+        first = diligence.appraise("lumenpath.com", "sso-key k:s", cache=cache, fetch=ok)
+        second = diligence.appraise("lumenpath.com", "sso-key k:s", cache=cache, fetch=ok)
+        self.assertEqual((first["status"], first["value"], second["value"]), ("ok", 500, 500))
+        self.assertEqual(calls, ["https://api.godaddy.com/v1/appraisal/lumenpath.com"])
+
+        def denied(url):
+            raise diligence.http.HttpError("HTTP 403", status=403)
+
+        self.assertEqual(diligence.appraise("x.com", "sso-key k:s", fetch=denied)["status"], "denied")
+
+        def missing(url):
+            raise diligence.http.HttpError("HTTP 404", status=404)
+
+        self.assertEqual(diligence.appraise("x.com", "sso-key k:s", fetch=missing)["status"], "none")
+        self.assertEqual(diligence.appraise("x.com", "sso-key k:s", fetch=lambda url: "nope")["status"], "error")
+        self.assertIn("GODADDY_API_KEY", diligence.describe_appraisal({"status": "unconfigured"}))
+
+
 class DigestTests(unittest.TestCase):
+    def test_availability_and_appraisal_lines(self):
+        item = {"domain": "lumenpath.com", "dr": 25.0, "referring_domains": 40, "total_backlinks": 300, "spam_score": 3,
+                "availability": {"status": "pending-delete"}, "appraisal": {"status": "ok", "value": 1500, "comparables": [{"domain": "a.com", "price": 1200, "year": 2024}]}}
+        lines = digest.diligence_lines(item)
+        self.assertIn("⏳", lines)
+        self.assertIn("backorder", lines)
+        self.assertIn("GoValue $1,500", lines)
+        self.assertIn("spam 3", digest.metrics_line(item))
+        self.assertNotIn("Appraisal", digest.diligence_lines({"domain": "x.com", "appraisal": {"status": "unconfigured"}}))
+
     def test_links_and_blocks(self):
         item = {"domain": "neuro.ai", "score": 9, "suggested_price": 3200, "dr": 32.0, "referring_domains": 64, "total_backlinks": 910, "brandability": 8, "reasoning": "a <b> & c"}
         text, blocks = digest.build_digest([item], "2026-10-05", funnel={"fetched": 10, "shortlisted": 1})
@@ -298,6 +400,20 @@ class DigestTests(unittest.TestCase):
 
 
 class PipelineTests(NoNetworkTestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        # Live-mode tests: the registry says every name is free unless a test overrides this.
+        self.availability_calls: list[str] = []
+
+        def fake_check(domain, **kw):
+            self.availability_calls.append(domain)
+            return {"status": "available", "source": "rdap", "checked_at": "now", "server": "https://rdap.test/"}
+
+        for target, value in (("check_availability", fake_check), ("load_rdap_bases", lambda cache=None, **kw: dict(pipeline.availability.KNOWN_RDAP_BASES))):
+            patcher = mock.patch.object(pipeline.availability, target, value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
     def test_dry_run_end_to_end_without_network(self):
         sender = StdoutSender(io.StringIO())
         conf = pipeline.DomainFlipperConfig()
@@ -322,7 +438,16 @@ class PipelineTests(NoNetworkTestCase):
         self.assertEqual(pipeline.DomainFlipperConfig(whoisfreaks_api_key="k").resolved_domain_source(), "whoisfreaks")
         self.assertEqual(pipeline.DomainFlipperConfig().resolved_authority_source(), "none")
         self.assertEqual(pipeline.DomainFlipperConfig(openpagerank_api_key="o").resolved_authority_source(), "openpagerank")
-        self.assertEqual(pipeline.DomainFlipperConfig(openpagerank_api_key="o", dataforseo_auth="Basic x").resolved_authority_source(), "dataforseo")
+        both = pipeline.DomainFlipperConfig(openpagerank_api_key="o", dataforseo_auth="Basic x")
+        self.assertEqual(both.resolved_authority_source(), "openpagerank")  # free source gates the field
+        self.assertEqual(both.resolved_deep_authority(), "dataforseo")      # paid counts go deep on the best names
+        only_paid = pipeline.DomainFlipperConfig(dataforseo_auth="Basic x")
+        self.assertEqual(only_paid.resolved_authority_source(), "dataforseo")
+        self.assertEqual(only_paid.resolved_deep_authority(), "none")
+        self.assertEqual(pipeline.DomainFlipperConfig().resolved_availability_check(), "rdap")
+        self.assertEqual(pipeline.DomainFlipperConfig(availability_check="none").resolved_availability_check(), "none")
+        with self.assertRaises(SystemExit):
+            pipeline.DomainFlipperConfig(availability_check="bogus").resolved_availability_check()
         with self.assertRaises(SystemExit):
             pipeline.DomainFlipperConfig(domain_source="bogus").resolved_domain_source()
 
@@ -442,6 +567,75 @@ class PipelineTests(NoNetworkTestCase):
         self.assertEqual(result.shortlist[0]["domain"], "strong.com")
         self.assertIn("Open PageRank", pipeline.digest.metrics_line(result.shortlist[0]))
 
+    def test_taken_names_are_dropped_and_the_cap_leaves_the_rest_unchecked(self):
+        conf = pipeline.DomainFlipperConfig(openpagerank_api_key="opr", cache_path=":memory:", audit_path=None, top_n=5, max_availability=2)
+        feed = [sources.normalise_record({"domain": d}) for d in ("alpha.com", "beta.com", "gamma.com", "delta.com")]
+        opr = lambda ds, k, **kw: {d: {"rank": 1, "dr": 40.0, "referring_domains": None, "total_backlinks": None, "spam_score": None, "first_seen": None, "authority_source": "openpagerank"} for d in ds}
+        statuses = {"alpha.com": "taken", "beta.com": "available", "gamma.com": "unknown", "delta.com": "available"}
+
+        def fake_check(domain, **kw):
+            return {"status": statuses[domain], "source": "rdap", "checked_at": "now", "registrar": "Catcher Inc" if statuses[domain] == "taken" else None}
+
+        with mock.patch.object(pipeline.sources, "fetch_free_dropped_domains", return_value=feed), \
+             mock.patch.object(pipeline.enrich, "fetch_openpagerank", opr), \
+             mock.patch.object(pipeline.availability, "check_availability", fake_check):
+            result = pipeline.run(conf, sender=StdoutSender(io.StringIO()), log=lambda *a, **k: None)
+        by_domain = {i["domain"]: i["availability"]["status"] for i in result.shortlist}
+        # Cap of two: alpha and beta were looked up (heuristic tie keeps feed order); alpha was taken and is gone.
+        self.assertEqual(by_domain, {"beta.com": "available", "gamma.com": "unchecked", "delta.com": "unchecked"})
+        self.assertEqual(result.funnel["available"], len(result.shortlist))
+        self.assertEqual(result.sources["availability"], "rdap")
+
+        conf_off = pipeline.DomainFlipperConfig(openpagerank_api_key="opr", cache_path=":memory:", audit_path=None, availability_check="none")
+        with mock.patch.object(pipeline.sources, "fetch_free_dropped_domains", return_value=feed), \
+             mock.patch.object(pipeline.enrich, "fetch_openpagerank", opr):
+            off = pipeline.run(conf_off, sender=StdoutSender(io.StringIO()), log=lambda *a, **k: None)
+        self.assertNotIn("available", off.funnel)
+        self.assertNotIn("availability", off.shortlist[0])
+
+    def test_deep_enrichment_and_appraisal_feed_the_model(self):
+        conf = pipeline.DomainFlipperConfig(
+            openpagerank_api_key="opr", dataforseo_auth="Basic x", godaddy_api_key="k", godaddy_api_secret="s", openai_api_key="sk",
+            cache_path=":memory:", audit_path=None, top_n=3, max_deep_enrich=2,
+        )
+        feed = [sources.normalise_record({"domain": d}) for d in ("lumenpath.com", "zzqxv.com", "neuro.ai")]
+        opr = lambda ds, k, **kw: {d: {"rank": 1, "dr": 30.0, "referring_domains": None, "total_backlinks": None, "spam_score": None, "first_seen": None, "authority_source": "openpagerank"} for d in ds}
+        deep_calls, appraisal_calls, prompts = [], [], []
+
+        def fake_summary(domain, auth, **kw):
+            deep_calls.append(domain)
+            return {"rank": 250, "dr": 25.0, "referring_domains": 44, "total_backlinks": 310, "spam_score": 4, "first_seen": "2015-01-01"}
+
+        def fake_appraise(domain, auth, **kw):
+            appraisal_calls.append(domain)
+            return {"status": "ok", "source": "godaddy", "value": 1800, "currency": "USD", "comparables": [{"domain": "lumen.io", "price": 1500, "year": 2024}], "reasons": [], "checked_at": "now"}
+
+        class FakeLLM:
+            def structured(self, *, system, user, schema_name, schema):
+                prompts.append(user)
+                return {"score": 8, "brandability": 7, "suggested_price": 1700, "reasoning": "ok"}
+
+        with mock.patch.object(pipeline.sources, "fetch_free_dropped_domains", return_value=feed), \
+             mock.patch.object(pipeline.enrich, "fetch_openpagerank", opr), \
+             mock.patch.object(pipeline.enrich, "fetch_backlink_summary", fake_summary), \
+             mock.patch.object(pipeline.diligence, "appraise", fake_appraise), \
+             mock.patch.object(pipeline, "LLMClient", lambda **kw: FakeLLM()), \
+             mock.patch.object(pipeline.diligence, "wayback_summary", lambda d, **kw: {"status": "none", "timeline_url": "t"}):
+            result = pipeline.run(conf, sender=StdoutSender(io.StringIO()), log=lambda *a, **k: None)
+        self.assertEqual(len(deep_calls), 2)                                   # DOMAIN_MAX_DEEP_ENRICH
+        self.assertEqual(result.funnel["deep_enriched"], 2)
+        self.assertEqual(sorted(set(appraisal_calls)), sorted(set(deep_calls) | {i["domain"] for i in result.shortlist}))
+        deep = next(i for i in result.shortlist if i["domain"] in deep_calls)
+        self.assertEqual((deep["referring_domains"], deep["gate_dr"], deep["authority_source"]), (44, 30.0, "openpagerank+dataforseo"))
+        self.assertTrue(all(i["appraisal"]["value"] == 1800 for i in result.shortlist))
+        deep_prompt = next(p for p in prompts if deep["domain"] in p)
+        self.assertIn("Referring Domains: 44", deep_prompt)
+        self.assertIn("Market appraisal (GoDaddy GoValue, USD): 1800", deep_prompt)
+        self.assertIn("lumen.io $1,500 (2024)", deep_prompt)
+        self.assertEqual(result.sources["deep_authority"], "dataforseo")
+        self.assertEqual(result.sources["appraisal"], "godaddy")
+        self.assertIn("Ref Domains", digest.metrics_line(deep))
+
     def test_live_mode_feed_failure_exits_cleanly(self):
         conf = pipeline.DomainFlipperConfig(whoisfreaks_api_key="wf", cache_path=":memory:", audit_path=None)
         with mock.patch.object(pipeline.sources, "fetch_dropped_domains", side_effect=sources.SourceError("boom")):
@@ -471,7 +665,10 @@ class PipelineTests(NoNetworkTestCase):
              mock.patch.object(pipeline.enrich, "fetch_backlink_summary", fake_summary), \
              mock.patch.object(pipeline.scoring, "score_domain", fake_score):
             result = pipeline.run(conf, drop_date="2026-10-05", sender=sender, log=lambda *a, **k: None)
-        self.assertEqual(result.funnel, {"fetched": 3, "after_filters": 2, "after_authority_gate": 1, "scored": 1, "shortlisted": 1})
+        self.assertEqual(result.funnel, {"fetched": 3, "after_filters": 2, "after_authority_gate": 1, "available": 1, "scored": 1, "shortlisted": 1})
+        self.assertEqual(self.availability_calls, ["lumenpath.com"])
+        self.assertEqual(result.shortlist[0]["availability"]["status"], "available")
+        self.assertEqual(result.shortlist[0]["appraisal"]["status"], "unconfigured")
         self.assertEqual(result.shortlist[0]["domain"], "lumenpath.com")
         self.assertEqual(result.shortlist[0]["score"], 9)
 

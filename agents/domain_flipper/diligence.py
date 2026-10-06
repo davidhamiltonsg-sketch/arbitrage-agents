@@ -11,8 +11,11 @@ from datetime import datetime, timezone
 from typing import Any
 
 from ..common import http
+from ..common.cache import SEVEN_DAYS, Cache
 
 CDX_URL = "https://web.archive.org/cdx/search/cdx"
+# GoDaddy's appraisal (GoValue) is free with a production API key from developer.godaddy.com.
+GODADDY_API_BASE = "https://api.godaddy.com"
 
 # Marks whose presence in a name is a near-certain conflict. A cheap screen,
 # not clearance: always check the registries linked below before buying.
@@ -88,11 +91,11 @@ def trademark_screen(domain: str) -> dict[str, Any]:
     flags = [m for m in FAMOUS_MARKS if (m == sld) or (len(m) >= 4 and m in sld)]
     if sld in FAMOUS_MARKS:
         risk = "high"
-    elif any(len(m) >= 5 or sld.startswith(m) or sld.endswith(m) for m in flags):
-        # A long mark anywhere, or a short one at the start or end ("nikeoutlet", "bestnike"), is a likely conflict.
+    elif any(len(m) >= 5 or sld.startswith(m) for m in flags):
+        # A long mark anywhere, or a short one leading the name ("nikeoutlet"), is a likely conflict.
         risk = "high"
     elif flags:
-        # A 4-letter mark mid-word ("climbing" has "bing") needs a human look.
+        # A 4-letter mark inside or ending an ordinary word ("bestnikeshoes", "climbing" has "bing") needs a human look.
         risk = "medium"
     else:
         risk = "low"
@@ -142,3 +145,94 @@ def describe_wayback(w: dict[str, Any]) -> str:
     if status == "error":
         return "Wayback check failed, open the timeline manually"
     return "Wayback not checked"
+
+
+def godaddy_auth_header(key: str | None, secret: str | None) -> str | None:
+    if not key or not secret:
+        return None
+    return f"sso-key {key.strip()}:{secret.strip()}"
+
+
+def parse_appraisal(payload: dict[str, Any]) -> dict[str, Any]:
+    """Reduce a GoDaddy appraisal response to the fields the digest shows."""
+    value = payload.get("govalue")
+    try:
+        value = int(round(float(value))) if value is not None else None
+    except (TypeError, ValueError):
+        value = None
+    comps = []
+    for comp in payload.get("comparable_sales") or []:
+        if not isinstance(comp, dict) or not comp.get("domain"):
+            continue
+        try:
+            price = int(round(float(comp.get("price") or 0)))
+        except (TypeError, ValueError):
+            price = 0
+        comps.append({"domain": str(comp["domain"]), "price": price, "year": comp.get("year")})
+    reasons = []
+    for reason in payload.get("reasons") or []:
+        if isinstance(reason, dict):
+            text = reason.get("description") or reason.get("type")
+            if text:
+                reasons.append(str(text))
+        elif isinstance(reason, str):
+            reasons.append(reason)
+    return {"status": "ok" if value is not None else "none", "value": value, "currency": "USD", "comparables": comps[:5], "reasons": reasons[:5]}
+
+
+def appraise(
+    domain: str,
+    auth_header: str,
+    *,
+    cache: Cache | None = None,
+    ttl_seconds: float = SEVEN_DAYS,
+    base_url: str = GODADDY_API_BASE,
+    timeout: float = 20.0,
+    fetch=None,
+) -> dict[str, Any]:
+    """GoDaddy GoValue appraisal with comparable sales; never raises."""
+    url = f"{base_url.rstrip('/')}/v1/appraisal/{urllib.parse.quote(domain, safe='')}"
+    base = {"status": "unknown", "source": "godaddy", "value": None, "currency": "USD", "comparables": [], "reasons": [],
+            "checked_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+
+    def call() -> dict[str, Any]:
+        payload = fetch(url) if fetch is not None else http.get_json(url, headers={"Authorization": auth_header, "Accept": "application/json"}, timeout=timeout, retries=1)
+        if not isinstance(payload, dict):
+            raise ValueError("unexpected appraisal payload")
+        return parse_appraisal(payload)
+
+    try:
+        parsed = cache.remember("godaddy:appraisal", domain, call, ttl_seconds) if cache else call()
+    except http.HttpError as exc:
+        if exc.status in (401, 403):
+            return {**base, "status": "denied", "error": "GoDaddy rejected the API key (needs a production key with appraisal access)"}
+        if exc.status in (404, 422):
+            return {**base, "status": "none", "error": "GoDaddy has no appraisal for this name"}
+        return {**base, "status": "error", "error": str(exc)[:200]}
+    except (ValueError, TypeError, KeyError) as exc:
+        return {**base, "status": "error", "error": str(exc)[:200]}
+    return {**base, **parsed}
+
+
+def sample_appraisal(domain: str) -> dict[str, Any]:
+    seed = sum(ord(c) for c in domain)
+    value = 400 + (seed % 23) * 100
+    return {"status": "sample", "source": "sample", "value": value, "currency": "USD",
+            "comparables": [{"domain": f"{domain.split('.')[0][:4]}hub.com", "price": value + 250, "year": 2024}], "reasons": [], "checked_at": None}
+
+
+def describe_appraisal(a: dict[str, Any] | None) -> str:
+    status = (a or {}).get("status")
+    if status in ("ok", "sample") and a.get("value") is not None:
+        comps = a.get("comparables") or []
+        text = f"GoDaddy GoValue ${a['value']:,}" + (" (sample)" if status == "sample" else "")
+        if comps:
+            text += " · comps: " + ", ".join(f"{c['domain']} ${c['price']:,}" + (f" ({c['year']})" if c.get("year") else "") for c in comps[:3])
+        return text
+    if status == "none":
+        return "no GoDaddy appraisal for this name"
+    if status == "denied":
+        return "GoDaddy appraisal denied: check GODADDY_API_KEY/SECRET"
+    if status == "error":
+        return "GoDaddy appraisal failed on the runner"
+    return "no appraisal (add GODADDY_API_KEY and GODADDY_API_SECRET)"

@@ -12,13 +12,15 @@ from ..common.cache import Cache
 from ..common.llm import LLMClient
 from ..common.ranking import rank
 from ..common.slack import Sender, SlackClient, StdoutSender
-from . import digest, diligence, enrich, filters, scoring, sources
+from . import availability, digest, diligence, enrich, filters, scoring, sources
 
 FIXTURE_PATH = cfg.PROJECT_ROOT / "fixtures" / "dropped_domains.sample.json"
 
 
 DOMAIN_SOURCES = ("auto", "whoisfreaks", "whoisfreaks-free")
 AUTHORITY_SOURCES = ("auto", "dataforseo", "openpagerank", "none")
+DEEP_AUTHORITY_SOURCES = ("auto", "dataforseo", "none")
+AVAILABILITY_CHECKS = ("auto", "rdap", "none")
 
 
 @dataclass
@@ -35,6 +37,15 @@ class DomainFlipperConfig:
     max_enrich: int = 400           # paid lookups (DataForSEO) per run
     max_openpagerank: int = 5000    # free lookups (Open PageRank, 100 per call) per run
     max_llm_score: int = 100
+    # Deep enrichment: paid DataForSEO link counts for the best candidates only (after the free gate).
+    deep_authority: str = "auto"
+    max_deep_enrich: int = 25
+    # RDAP availability check (free): drop names a drop-catcher already re-registered.
+    availability_check: str = "auto"
+    max_availability: int = 150
+    godaddy_api_key: str | None = None
+    godaddy_api_secret: str | None = None
+    godaddy_api_base: str = diligence.GODADDY_API_BASE
     openai_api_key: str | None = None
     openai_model: str = "gpt-4o-mini"
     openai_base_url: str = "https://api.openai.com/v1"
@@ -72,6 +83,13 @@ class DomainFlipperConfig:
             max_enrich=cfg.env_int("DOMAIN_MAX_ENRICH", 400),
             max_openpagerank=cfg.env_int("DOMAIN_MAX_OPENPAGERANK", 5000),
             max_llm_score=cfg.env_int("DOMAIN_MAX_LLM_SCORE", 100),
+            deep_authority=(cfg.env("DEEP_AUTHORITY_SOURCE", "auto") or "auto").lower(),
+            max_deep_enrich=cfg.env_int("DOMAIN_MAX_DEEP_ENRICH", 25),
+            availability_check=(cfg.env("DOMAIN_AVAILABILITY_CHECK", "auto") or "auto").lower(),
+            max_availability=cfg.env_int("DOMAIN_MAX_AVAILABILITY", 150),
+            godaddy_api_key=cfg.env("GODADDY_API_KEY"),
+            godaddy_api_secret=cfg.env("GODADDY_API_SECRET"),
+            godaddy_api_base=cfg.env("GODADDY_API_BASE", diligence.GODADDY_API_BASE) or diligence.GODADDY_API_BASE,
             openai_api_key=cfg.env("OPENAI_API_KEY"),
             openai_model=cfg.env("OPENAI_MODEL_DOMAIN", cfg.env("OPENAI_MODEL", "gpt-4o-mini")) or "gpt-4o-mini",
             openai_base_url=cfg.env("OPENAI_BASE_URL", "https://api.openai.com/v1") or "https://api.openai.com/v1",
@@ -97,12 +115,28 @@ class DomainFlipperConfig:
         if self.authority_source not in AUTHORITY_SOURCES:
             raise SystemExit(f"AUTHORITY_SOURCE must be one of {', '.join(AUTHORITY_SOURCES)}, got {self.authority_source!r}")
         if self.authority_source == "auto":
-            if self.dataforseo_auth:
-                return "dataforseo"
+            # The free, batchable source gates the whole field; DataForSEO (metered) goes deep on the best names.
             if self.openpagerank_api_key:
                 return "openpagerank"
+            if self.dataforseo_auth:
+                return "dataforseo"
             return "none"
         return self.authority_source
+
+    def resolved_deep_authority(self) -> str:
+        if self.deep_authority not in DEEP_AUTHORITY_SOURCES:
+            raise SystemExit(f"DEEP_AUTHORITY_SOURCE must be one of {', '.join(DEEP_AUTHORITY_SOURCES)}, got {self.deep_authority!r}")
+        if self.deep_authority == "auto":
+            return "dataforseo" if self.dataforseo_auth and self.resolved_authority_source() != "dataforseo" else "none"
+        return self.deep_authority
+
+    def resolved_availability_check(self) -> str:
+        if self.availability_check not in AVAILABILITY_CHECKS:
+            raise SystemExit(f"DOMAIN_AVAILABILITY_CHECK must be one of {', '.join(AVAILABILITY_CHECKS)}, got {self.availability_check!r}")
+        return "rdap" if self.availability_check == "auto" else self.availability_check
+
+    def godaddy_auth(self) -> str | None:
+        return diligence.godaddy_auth_header(self.godaddy_api_key, self.godaddy_api_secret)
 
 
 @dataclass
@@ -248,6 +282,12 @@ def run(
     elif not notes:
         log(f"[enrich] {len(enriched)} pass the authority gate via {authority} (DR >= {conf.gate.min_dr:g}, refs >= {conf.gate.min_referring_domains} where available)")
 
+    # Phase 4b: availability (RDAP). A dropped name a drop-catcher already took is not a deal.
+    enriched = _check_availability(conf, cache, enriched, dry_run, audit, funnel, log)
+
+    # Phase 4c: deep enrichment + appraisal on the best names only (metered DataForSEO, free GoDaddy GoValue)
+    enriched = _deep_enrich(conf, cache, authority, enriched, dry_run, audit, funnel, log)
+
     # Phase 5: AI score (LLM calls are capped; the heuristic pre-ranks the field first)
     scorer = _scorer(conf, dry_run, log)
     to_score = enriched
@@ -295,14 +335,19 @@ def run(
     for item in shortlist:
         audit.record("shortlisted", item["domain"], score=item["score"], suggested_price=item["suggested_price"])
 
-    # Phase 6b: due diligence on the shortlist only (Wayback history + trademark screen)
+    # Phase 6b: due diligence on the shortlist only (Wayback history + trademark screen + appraisal)
+    godaddy = conf.godaddy_auth()
     for item in shortlist:
         if dry_run:
             item.update(diligence.sample_diligence(item["domain"]))
+            item.setdefault("appraisal", diligence.sample_appraisal(item["domain"]))
         else:
             item["wayback"] = diligence.wayback_summary(item["domain"])
             item["trademark"] = diligence.trademark_screen(item["domain"])
-        audit.record("diligence", item["domain"], wayback=item["wayback"].get("status"), trademark_risk=item["trademark"].get("risk"))
+            if "appraisal" not in item:
+                item["appraisal"] = diligence.appraise(item["domain"], godaddy, cache=cache, base_url=conf.godaddy_api_base) if godaddy else {"status": "unconfigured", "source": "godaddy", "value": None, "comparables": []}
+        audit.record("diligence", item["domain"], wayback=item["wayback"].get("status"), trademark_risk=item["trademark"].get("risk"),
+                     appraisal=item["appraisal"].get("value"), availability=(item.get("availability") or {}).get("status"))
     if shortlist:
         log(f"[diligence] Wayback + trademark screen done for {len(shortlist)} shortlisted domains")
 
@@ -321,8 +366,96 @@ def run(
         notes=notes,
         mode="dry-run" if dry_run else "live",
         date=drop_date,
-        sources={"domain": "fixture" if (dry_run or fixture_path) else conf.resolved_domain_source(), "authority": authority},
+        sources={
+            "domain": "fixture" if (dry_run or fixture_path) else conf.resolved_domain_source(),
+            "authority": authority,
+            "deep_authority": "fixture" if dry_run else conf.resolved_deep_authority(),
+            "availability": "sample" if dry_run else conf.resolved_availability_check(),
+            "appraisal": "sample" if dry_run else ("godaddy" if conf.godaddy_auth() else "none"),
+        },
     )
+
+
+def _prerank(candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Best names first by the free heuristic, so capped lookups go where they matter."""
+    return sorted(candidates, key=lambda r: (-scoring.heuristic_score(r)["score"], -scoring.heuristic_score(r)["brandability"]))
+
+
+def _check_availability(conf, cache: Cache, candidates: list[dict[str, Any]], dry_run: bool, audit: AuditLog, funnel: dict[str, int], log) -> list[dict[str, Any]]:
+    if not candidates:
+        return candidates
+    if dry_run:
+        for item in candidates:
+            item["availability"] = availability.sample_availability(item["domain"])
+        return candidates
+    mode = conf.resolved_availability_check()
+    if mode == "none":
+        return candidates
+    ordered = _prerank(candidates)
+    to_check, rest = ordered[: conf.max_availability], ordered[conf.max_availability:]
+    bases = availability.load_rdap_bases(cache)
+    kept: list[dict[str, Any]] = []
+    taken = 0
+    unknown = 0
+    for item in to_check:
+        result = availability.check_availability(item["domain"], bases=bases)
+        item["availability"] = result
+        audit.record("availability", item["domain"], status=result["status"], registrar=result.get("registrar"), note=result.get("note"))
+        if result["status"] in availability.BLOCKING_STATUSES:
+            taken += 1
+            continue
+        if result["status"] == availability.STATUS_UNKNOWN:
+            unknown += 1
+        kept.append(item)
+    for item in rest:
+        item["availability"] = {"status": availability.STATUS_UNCHECKED, "source": "rdap", "checked_at": None}
+        kept.append(item)
+    keep_ids = {id(item) for item in kept}
+    kept = [item for item in candidates if id(item) in keep_ids]  # original order (e.g. relaxed-gate ranking) survives
+    funnel["available"] = len(kept)
+    log(f"[availability] RDAP checked {len(to_check)}: {taken} already re-registered and dropped, {unknown} unknown"
+        + (f", {len(rest)} beyond the cap left unchecked" if rest else ""))
+    return kept
+
+
+def _deep_enrich(conf, cache: Cache, authority: str, candidates: list[dict[str, Any]], dry_run: bool, audit: AuditLog, funnel: dict[str, int], log) -> list[dict[str, Any]]:
+    if not candidates or dry_run:
+        return candidates
+    deep = conf.resolved_deep_authority()
+    godaddy = conf.godaddy_auth()
+    if deep == "none" and not godaddy:
+        return candidates
+    ordered = _prerank(candidates)
+    top = ordered[: conf.max_deep_enrich]
+    if deep == "dataforseo":
+        if not conf.dataforseo_auth:
+            raise SystemExit("DEEP_AUTHORITY_SOURCE=dataforseo needs DATAFORSEO_LOGIN/PASSWORD or DATAFORSEO_AUTH")
+        done = 0
+        for item in top:
+            try:
+                metrics = enrich.fetch_backlink_summary(item["domain"], conf.dataforseo_auth, cache=cache, dr_divisor=conf.dr_divisor)
+            except Exception as exc:
+                audit.record("enrich_error", item["domain"], error=str(exc), stage="deep")
+                log(f"[deep] {item['domain']}: {exc}")
+                continue
+            item["gate_dr"] = item.get("dr")
+            item.update(metrics)
+            item["authority_source"] = f"{authority}+dataforseo" if authority not in ("none", "dataforseo") else "dataforseo"
+            audit.record("deep_enriched", item["domain"], dr=metrics["dr"], referring_domains=metrics["referring_domains"], total_backlinks=metrics["total_backlinks"], spam_score=metrics.get("spam_score"))
+            done += 1
+        funnel["deep_enriched"] = done
+        log(f"[deep] DataForSEO link counts for the top {done} of {len(candidates)} candidates (DOMAIN_MAX_DEEP_ENRICH={conf.max_deep_enrich})")
+    if godaddy:
+        for item in top:
+            item["appraisal"] = diligence.appraise(item["domain"], godaddy, cache=cache, base_url=conf.godaddy_api_base)
+            audit.record("appraised", item["domain"], status=item["appraisal"].get("status"), value=item["appraisal"].get("value"))
+        valued = sum(1 for i in top if i["appraisal"].get("value") is not None)
+        denied = any(i["appraisal"].get("status") == "denied" for i in top)
+        if denied:
+            log("::warning title=GoDaddy appraisal denied::GoDaddy rejected GODADDY_API_KEY/SECRET; appraisals skipped this run")
+        else:
+            log(f"[appraise] GoDaddy GoValue for {valued} of {len(top)} candidates")
+    return candidates
 
 
 LLM_CIRCUIT_BREAKER = 3

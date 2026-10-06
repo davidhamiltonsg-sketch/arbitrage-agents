@@ -53,6 +53,9 @@ jobs:
       DATAFORSEO_LOGIN: ${{ secrets.DATAFORSEO_LOGIN }}
       DATAFORSEO_PASSWORD: ${{ secrets.DATAFORSEO_PASSWORD }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      # GoDaddy production API key + secret (developer.godaddy.com) for free GoValue appraisals
+      GODADDY_API_KEY: ${{ secrets.GODADDY_API_KEY }}
+      GODADDY_API_SECRET: ${{ secrets.GODADDY_API_SECRET }}
       BUILTWITH_API_KEY: ${{ secrets.BUILTWITH_API_KEY }}
       SIMILARWEB_API_KEY: ${{ secrets.SIMILARWEB_API_KEY }}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -71,6 +74,8 @@ jobs:
       DOMAIN_MIN_DR: ${{ vars.DOMAIN_MIN_DR }}
       DOMAIN_MIN_REFERRING_DOMAINS: ${{ vars.DOMAIN_MIN_REFERRING_DOMAINS }}
       DOMAIN_MAX_ENRICH: ${{ vars.DOMAIN_MAX_ENRICH }}
+      DOMAIN_MAX_DEEP_ENRICH: ${{ vars.DOMAIN_MAX_DEEP_ENRICH }}
+      DOMAIN_AVAILABILITY_CHECK: ${{ vars.DOMAIN_AVAILABILITY_CHECK }}
       SAAS_TOP_N: ${{ vars.SAAS_TOP_N }}
       SAAS_MAX_ASKING_PRICE: ${{ vars.SAAS_MAX_ASKING_PRICE }}
       SAAS_SOURCES: file
