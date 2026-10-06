@@ -51,11 +51,14 @@ def normalise_scores(raw: dict[str, Any]) -> dict[str, Any]:
 
 
 def score_domain(record: dict[str, Any], llm: LLMClient) -> dict[str, Any]:
+    def show(value: Any) -> Any:
+        return "unknown" if value is None else value
+
     user = USER_TEMPLATE.format(
         domain=record["domain"],
-        dr=record.get("dr", 0),
-        referring_domains=record.get("referring_domains", 0),
-        total_backlinks=record.get("total_backlinks", 0),
+        dr=show(record.get("dr")),
+        referring_domains=show(record.get("referring_domains")),
+        total_backlinks=show(record.get("total_backlinks")),
     )
     raw = llm.structured(system=SYSTEM_PROMPT, user=user, schema_name=SCHEMA_NAME, schema=SCHEMA)
     return normalise_scores(raw)
@@ -63,11 +66,15 @@ def score_domain(record: dict[str, Any], llm: LLMClient) -> dict[str, Any]:
 
 def heuristic_score(record: dict[str, Any]) -> dict[str, Any]:
     """Rubric-only scorer used in dry runs and when no OpenAI key is configured."""
-    dr = float(record.get("dr") or 0)
-    refs = int(record.get("referring_domains") or 0)
+    dr_raw = record.get("dr")
+    refs_raw = record.get("referring_domains")
+    dr = float(dr_raw or 0)
+    refs = int(refs_raw or 0)
     sld = record["domain"].split(".")[0]
 
-    if dr >= 30 and refs >= 50:
+    if refs_raw is None:  # authority score only (e.g. Open PageRank), no link counts
+        equity = 9 if dr >= 30 else 7 if dr >= 20 else 5 if dr >= 10 else 2
+    elif dr >= 30 and refs >= 50:
         equity = 9
     elif dr >= 20 and refs >= 20:
         equity = 7
@@ -75,6 +82,8 @@ def heuristic_score(record: dict[str, Any]) -> dict[str, Any]:
         equity = 5
     else:
         equity = 2
+    if dr_raw is None:  # no authority data at all: rank on the name alone
+        equity = 3
 
     vowels = sum(ch in "aeiou" for ch in sld)
     ratio = vowels / max(len(sld), 1)
@@ -91,9 +100,15 @@ def heuristic_score(record: dict[str, Any]) -> dict[str, Any]:
 
     score = max(1, min(10, round(0.7 * equity + 0.3 * brandability)))
     price = int(300 + (score - 1) * 350 + min(refs, 200) * 2)
+    if dr_raw is None:
+        authority = "no authority data"
+    elif refs_raw is None:
+        authority = f"authority score {dr:g}/100 (no link counts)"
+    else:
+        authority = f"DR {dr:g} with {refs} referring domains"
     return {
         "score": score,
         "brandability": brandability,
         "suggested_price": price,
-        "reasoning": f"Heuristic: DR {dr:g} with {refs} referring domains, {len(sld)}-letter {record.get('tld', '')} name.",
+        "reasoning": f"Heuristic: {authority}, {len(sld)}-letter {record.get('tld', '')} name.",
     }

@@ -5,6 +5,8 @@ name: Run arbitrage agents
 # Every run writes its digest to the run's Summary page; live runs (and runs
 # with "Open issue" ticked) also open a GitHub issue so the shortlist reaches
 # your phone through the GitHub app. Slack is optional on top of that.
+# With no secrets at all the Domain Flipper runs live on the free public feed
+# and name-quality scoring; add OPENPAGERANK_API_KEY (free) for authority data.
 on:
   schedule:
     - cron: "0 6 * * *"   # Domain Flipper, daily 06:00 UTC
@@ -44,6 +46,7 @@ jobs:
     env:
       # --- secrets: add under Settings > Secrets and variables > Actions > Secrets
       WHOISFREAKS_API_KEY: ${{ secrets.WHOISFREAKS_API_KEY }}
+      OPENPAGERANK_API_KEY: ${{ secrets.OPENPAGERANK_API_KEY }}
       DATAFORSEO_LOGIN: ${{ secrets.DATAFORSEO_LOGIN }}
       DATAFORSEO_PASSWORD: ${{ secrets.DATAFORSEO_PASSWORD }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -56,6 +59,10 @@ jobs:
       # URL of a JSON listings export for the SaaS Scout (e.g. an Apify dataset items URL)
       SAAS_LISTINGS_URL: ${{ secrets.SAAS_LISTINGS_URL }}
       # --- non-secret knobs: Settings > Secrets and variables > Actions > Variables
+      # auto | whoisfreaks (paid Domainer package) | whoisfreaks-free (public 10k/day sample, no key)
+      DOMAIN_SOURCE: ${{ vars.DOMAIN_SOURCE }}
+      # auto | dataforseo (paid) | openpagerank (free key) | none
+      AUTHORITY_SOURCE: ${{ vars.AUTHORITY_SOURCE }}
       DOMAIN_TLDS: ${{ vars.DOMAIN_TLDS }}
       DOMAIN_TOP_N: ${{ vars.DOMAIN_TOP_N }}
       DOMAIN_MIN_DR: ${{ vars.DOMAIN_MIN_DR }}
@@ -120,8 +127,8 @@ jobs:
             if [ "$agent" = "saas-scout" ] && [ ! -f listings.json ] && [[ "$flags" != *--dry-run* ]]; then
               echo "::warning::No listings.json: set the SAAS_LISTINGS_URL secret. Falling back to --dry-run."
               flags="--dry-run"
-            elif [ "$agent" = "domain-flipper" ] && [ -z "$WHOISFREAKS_API_KEY" ] && [[ "$flags" != *--dry-run* ]]; then
-              echo "::warning::WHOISFREAKS_API_KEY secret is not set. Falling back to --dry-run."
+            elif [ "$agent" = "domain-flipper" ] && [ "$DOMAIN_SOURCE" = "whoisfreaks" ] && [ -z "$WHOISFREAKS_API_KEY" ] && [[ "$flags" != *--dry-run* ]]; then
+              echo "::warning::DOMAIN_SOURCE=whoisfreaks but WHOISFREAKS_API_KEY is not set. Falling back to --dry-run."
               flags="--dry-run"
             fi
             [[ "$flags" == *--dry-run* ]] && echo "mode=sample data (dry run)" > "digests/$agent.mode" || echo "mode=live" > "digests/$agent.mode"

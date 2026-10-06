@@ -74,6 +74,32 @@ class SourceParsingTests(unittest.TestCase):
         self.assertIn("HTTP 500", sources.describe_whoisfreaks_error(HttpError("x", status=500)))
 
 
+    def test_free_feed_parses_headerless_csv_and_falls_back_to_latest(self):
+        from agents.common.http import HttpError, Response
+
+        calls = []
+
+        def fake_request(method, url, **kwargs):
+            calls.append(url)
+            if url.endswith("2026-10-05-free-dropped-domains.csv"):
+                raise HttpError("HTTP 404", status=404, url=url)
+            return Response(200, {}, b"alpha.com\nbeta.xyz\nGamma.AI\n", url)
+
+        with mock.patch.object(sources.http, "request", fake_request):
+            records = sources.fetch_free_dropped_domains(date="2026-10-05")
+        self.assertEqual([r["domain"] for r in records], ["alpha.com", "beta.xyz", "gamma.ai"])
+        self.assertTrue(all(r["source"] == "whoisfreaks-free" for r in records))
+        self.assertEqual(len(calls), 2)
+        self.assertTrue(calls[1].endswith("0-latest-free-dropped-domains.csv"))
+
+    def test_free_feed_other_errors_are_source_errors(self):
+        from agents.common.http import HttpError
+
+        with mock.patch.object(sources.http, "request", side_effect=HttpError("HTTP 500", status=500)):
+            with self.assertRaises(sources.SourceError):
+                sources.fetch_free_dropped_domains()
+
+
 class FilterTests(unittest.TestCase):
     def setUp(self):
         self.cfg = filters.FilterConfig()
@@ -148,6 +174,41 @@ class EnrichTests(unittest.TestCase):
         self.assertEqual(len(calls), 1)
         self.assertEqual(calls[0][0]["target"], "x.com")
 
+    def test_parse_openpagerank_and_batch_fetch(self):
+        payload = {"status_code": 200, "response": [
+            {"status_code": 200, "error": "", "page_rank_integer": 5, "page_rank_decimal": 5.23, "rank": "12345", "domain": "Lumen.com"},
+            {"status_code": 404, "error": "Domain not found", "page_rank_integer": 0, "page_rank_decimal": 0, "rank": None, "domain": "nobody.com"},
+        ]}
+        parsed = enrich.parse_openpagerank(payload)
+        self.assertEqual(parsed["lumen.com"]["dr"], 52.3)
+        self.assertEqual(parsed["lumen.com"]["rank"], 12345)
+        self.assertIsNone(parsed["lumen.com"]["referring_domains"])
+        self.assertEqual(parsed["nobody.com"]["dr"], 0.0)
+        with self.assertRaises(enrich.EnrichmentError):
+            enrich.parse_openpagerank({"status_code": 401, "error": "bad key"})
+
+        seen = []
+
+        def fake_get(url, **kwargs):
+            seen.append((kwargs["params"]["domains[]"], kwargs["headers"]["API-OPR"]))
+            return {"status_code": 200, "response": [{"status_code": 200, "page_rank_decimal": 1.5, "rank": "9", "domain": d} for d in kwargs["params"]["domains[]"]]}
+
+        cache = Cache(":memory:")
+        domains = [f"d{i}.com" for i in range(150)]
+        with mock.patch.object(enrich.http, "get_json", fake_get):
+            first = enrich.fetch_openpagerank(domains, "KEY", cache=cache, batch_size=100)
+            second = enrich.fetch_openpagerank(domains[:5], "KEY", cache=cache, batch_size=100)
+        cache.close()
+        self.assertEqual(len(first), 150)
+        self.assertEqual([len(c[0]) for c in seen], [100, 50])
+        self.assertEqual(seen[0][1], "KEY")
+        self.assertEqual(second["d0.com"]["dr"], 15.0)
+
+    def test_gate_is_dr_only_without_link_counts(self):
+        gate = enrich.AuthorityGate(min_dr=10, min_referring_domains=5)
+        self.assertTrue(enrich.passes_authority_gate({"dr": 12.0, "referring_domains": None}, gate))
+        self.assertFalse(enrich.passes_authority_gate({"dr": 9.0, "referring_domains": None}, gate))
+
     def test_synthetic_metrics_deterministic(self):
         self.assertEqual(enrich.synthetic_metrics("a.com"), enrich.synthetic_metrics("a.com"))
 
@@ -161,6 +222,13 @@ class ScoringTests(unittest.TestCase):
             self.assertTrue(1 <= result["brandability"] <= 10)
             self.assertGreaterEqual(result["suggested_price"], 300)
         self.assertGreater(strong["score"], weak["score"])
+
+    def test_heuristic_handles_missing_authority(self):
+        none = scoring.heuristic_score({"domain": "lumen.com", "tld": "com", "dr": None, "referring_domains": None})
+        opr = scoring.heuristic_score({"domain": "lumen.com", "tld": "com", "dr": 45.0, "referring_domains": None})
+        self.assertIn("no authority data", none["reasoning"])
+        self.assertIn("no link counts", opr["reasoning"])
+        self.assertGreater(opr["score"], none["score"])
 
     def test_score_domain_clamps_llm_output(self):
         fake = mock.Mock()
@@ -202,10 +270,55 @@ class PipelineTests(NoNetworkTestCase):
         self.assertEqual(len(sender.sent), 1)
         self.assertNotIn("_fixture_metrics", result.shortlist[0])
 
-    def test_live_mode_without_key_exits(self):
-        conf = pipeline.DomainFlipperConfig(whoisfreaks_api_key=None)
+    def test_live_mode_paid_source_without_key_exits(self):
+        conf = pipeline.DomainFlipperConfig(domain_source="whoisfreaks", whoisfreaks_api_key=None, cache_path=":memory:", audit_path=None)
         with self.assertRaises(SystemExit):
             pipeline.run(conf, dry_run=False, sender=StdoutSender(io.StringIO()), log=lambda *a, **k: None)
+
+    def test_source_resolution(self):
+        self.assertEqual(pipeline.DomainFlipperConfig().resolved_domain_source(), "whoisfreaks-free")
+        self.assertEqual(pipeline.DomainFlipperConfig(whoisfreaks_api_key="k").resolved_domain_source(), "whoisfreaks")
+        self.assertEqual(pipeline.DomainFlipperConfig().resolved_authority_source(), "none")
+        self.assertEqual(pipeline.DomainFlipperConfig(openpagerank_api_key="o").resolved_authority_source(), "openpagerank")
+        self.assertEqual(pipeline.DomainFlipperConfig(openpagerank_api_key="o", dataforseo_auth="Basic x").resolved_authority_source(), "dataforseo")
+        with self.assertRaises(SystemExit):
+            pipeline.DomainFlipperConfig(domain_source="bogus").resolved_domain_source()
+
+    def test_live_free_mode_with_zero_keys(self):
+        conf = pipeline.DomainFlipperConfig(cache_path=":memory:", audit_path=None, top_n=3)
+        feed = [sources.normalise_record({"domain": d}) for d in ("lumenpath.com", "bad-name.com", "quillset.ai", "zephyrgrid.ai", "shop24.com")]
+        sender = StdoutSender(io.StringIO())
+        with mock.patch.object(pipeline.sources, "fetch_free_dropped_domains", return_value=feed):
+            result = pipeline.run(conf, sender=sender, log=lambda *a, **k: None)
+        self.assertEqual(result.funnel["after_filters"], 3)
+        self.assertEqual(result.funnel["after_authority_gate"], 3)  # gate skipped without an authority source
+        self.assertEqual(result.funnel["shortlisted"], 3)
+        self.assertTrue(all(i["dr"] is None for i in result.shortlist))
+        self.assertIn("no authority data", sender.sent[0]["blocks"][2]["text"]["text"])
+
+    def test_enrich_cap_applies_only_to_metered_sources(self):
+        feed = [sources.normalise_record({"domain": f"name{chr(97 + i)}.com"}) for i in range(6)]
+        with mock.patch.object(pipeline.sources, "fetch_free_dropped_domains", return_value=feed):
+            none = pipeline.run(pipeline.DomainFlipperConfig(cache_path=":memory:", audit_path=None, max_enrich=2), sender=StdoutSender(io.StringIO()), log=lambda *a, **k: None)
+            with mock.patch.object(pipeline.enrich, "fetch_openpagerank", lambda ds, k, **kw: {d: {"rank": 1, "dr": 50.0, "referring_domains": None, "total_backlinks": None, "spam_score": None, "first_seen": None} for d in ds}):
+                opr = pipeline.run(pipeline.DomainFlipperConfig(openpagerank_api_key="o", cache_path=":memory:", audit_path=None, max_enrich=2), sender=StdoutSender(io.StringIO()), log=lambda *a, **k: None)
+        self.assertEqual(none.funnel["scored"], 6)
+        self.assertEqual(opr.funnel["scored"], 2)
+
+    def test_live_free_mode_with_openpagerank(self):
+        conf = pipeline.DomainFlipperConfig(openpagerank_api_key="opr", cache_path=":memory:", audit_path=None, top_n=5)
+        feed = [sources.normalise_record({"domain": d}) for d in ("strong.com", "weak.com", "middling.ai")]
+        scores = {"strong.com": 4.5, "weak.com": 0.3, "middling.ai": 1.2}
+
+        def fake_opr(domains, key, **kw):
+            return {d: {"rank": 100, "dr": scores[d] * 10, "referring_domains": None, "total_backlinks": None, "spam_score": None, "first_seen": None, "authority_source": "openpagerank"} for d in domains}
+
+        with mock.patch.object(pipeline.sources, "fetch_free_dropped_domains", return_value=feed), \
+             mock.patch.object(pipeline.enrich, "fetch_openpagerank", fake_opr):
+            result = pipeline.run(conf, sender=StdoutSender(io.StringIO()), log=lambda *a, **k: None)
+        self.assertEqual(result.funnel["after_authority_gate"], 2)  # weak.com (3.0) fails DR >= 10
+        self.assertEqual(result.shortlist[0]["domain"], "strong.com")
+        self.assertIn("Open PageRank", pipeline.digest.metrics_line(result.shortlist[0]))
 
     def test_live_mode_feed_failure_exits_cleanly(self):
         conf = pipeline.DomainFlipperConfig(whoisfreaks_api_key="wf", cache_path=":memory:", audit_path=None)

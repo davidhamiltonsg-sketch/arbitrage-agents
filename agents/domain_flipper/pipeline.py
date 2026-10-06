@@ -17,8 +17,15 @@ from . import digest, enrich, filters, scoring, sources
 FIXTURE_PATH = cfg.PROJECT_ROOT / "fixtures" / "dropped_domains.sample.json"
 
 
+DOMAIN_SOURCES = ("auto", "whoisfreaks", "whoisfreaks-free")
+AUTHORITY_SOURCES = ("auto", "dataforseo", "openpagerank", "none")
+
+
 @dataclass
 class DomainFlipperConfig:
+    domain_source: str = "auto"
+    authority_source: str = "auto"
+    openpagerank_api_key: str | None = None
     whoisfreaks_api_key: str | None = None
     tlds: tuple[str, ...] = ("com", "ai")
     filters: filters.FilterConfig = field(default_factory=filters.FilterConfig)
@@ -46,6 +53,9 @@ class DomainFlipperConfig:
         if cfg.env("DATAFORSEO_AUTH") or (cfg.env("DATAFORSEO_LOGIN") and cfg.env("DATAFORSEO_PASSWORD")):
             dataforseo_auth = enrich.basic_auth_header(cfg.env("DATAFORSEO_LOGIN"), cfg.env("DATAFORSEO_PASSWORD"), cfg.env("DATAFORSEO_AUTH"))
         return cls(
+            domain_source=(cfg.env("DOMAIN_SOURCE", "auto") or "auto").lower(),
+            authority_source=(cfg.env("AUTHORITY_SOURCE", "auto") or "auto").lower(),
+            openpagerank_api_key=cfg.env("OPENPAGERANK_API_KEY"),
             whoisfreaks_api_key=cfg.env("WHOISFREAKS_API_KEY"),
             tlds=cfg.env_list("DOMAIN_TLDS", ("com", "ai")),
             filters=filters.FilterConfig(
@@ -70,6 +80,25 @@ class DomainFlipperConfig:
             audit_path=str(Path(log_dir) / "domain_flipper.jsonl") if log_dir else None,
             sheets_webhook_url=cfg.env("GOOGLE_SHEETS_WEBHOOK_URL"),
         )
+
+
+    def resolved_domain_source(self) -> str:
+        if self.domain_source not in DOMAIN_SOURCES:
+            raise SystemExit(f"DOMAIN_SOURCE must be one of {', '.join(DOMAIN_SOURCES)}, got {self.domain_source!r}")
+        if self.domain_source == "auto":
+            return "whoisfreaks" if self.whoisfreaks_api_key else "whoisfreaks-free"
+        return self.domain_source
+
+    def resolved_authority_source(self) -> str:
+        if self.authority_source not in AUTHORITY_SOURCES:
+            raise SystemExit(f"AUTHORITY_SOURCE must be one of {', '.join(AUTHORITY_SOURCES)}, got {self.authority_source!r}")
+        if self.authority_source == "auto":
+            if self.dataforseo_auth:
+                return "dataforseo"
+            if self.openpagerank_api_key:
+                return "openpagerank"
+            return "none"
+        return self.authority_source
 
 
 @dataclass
@@ -98,6 +127,7 @@ def run(
 ) -> RunResult:
     """Execute the pipeline. ``dry_run`` uses fixtures, synthetic metrics and the heuristic scorer with zero network calls."""
     top_n = top or conf.top_n
+    explicit_date = drop_date
     drop_date = drop_date or yesterday_utc()
     audit = AuditLog("domain_flipper", None if dry_run else conf.audit_path, None if dry_run else conf.sheets_webhook_url)
     cache = Cache(":memory:" if dry_run else conf.cache_path)
@@ -109,13 +139,18 @@ def run(
         records = sources.load_fixture(path)
         log(f"[fetch] loaded {len(records)} records from fixture {path.name}")
     else:
-        if not conf.whoisfreaks_api_key:
-            raise SystemExit("WHOISFREAKS_API_KEY is not set (use --dry-run to exercise the pipeline without keys)")
+        source = conf.resolved_domain_source()
         try:
-            records = sources.fetch_dropped_domains(conf.whoisfreaks_api_key, date=drop_date, tlds=conf.tlds)
+            if source == "whoisfreaks":
+                if not conf.whoisfreaks_api_key:
+                    raise SystemExit("DOMAIN_SOURCE=whoisfreaks needs WHOISFREAKS_API_KEY (or use DOMAIN_SOURCE=whoisfreaks-free)")
+                records = sources.fetch_dropped_domains(conf.whoisfreaks_api_key, date=drop_date, tlds=conf.tlds)
+                log(f"[fetch] WhoisFreaks returned {len(records)} dropped domains for {drop_date}")
+            else:
+                records = sources.fetch_free_dropped_domains(date=explicit_date)
+                log(f"[fetch] free WhoisFreaks GitHub feed returned {len(records)} dropped domains ({'file for ' + explicit_date if explicit_date else 'latest file'})")
         except sources.SourceError as exc:
             raise SystemExit(f"[fetch] {exc}") from exc
-        log(f"[fetch] WhoisFreaks returned {len(records)} dropped domains for {drop_date}")
     funnel["fetched"] = len(records)
     for record in records:
         audit.record("fetched", record["domain"], drop_date=record.get("drop_date"), registrar=record.get("registrar"))
@@ -126,29 +161,30 @@ def run(
         audit.record("filtered_out", record["domain"], reason=reason)
     funnel["after_filters"] = len(kept)
     log(f"[filter] {len(kept)} candidates remain ({len(rejected)} rejected)")
-    if len(kept) > conf.max_enrich:
-        log(f"[filter] capping enrichment at {conf.max_enrich} candidates (DOMAIN_MAX_ENRICH)")
+    authority = "fixture" if dry_run else conf.resolved_authority_source()
+    if authority in ("dataforseo", "openpagerank") and len(kept) > conf.max_enrich:
+        log(f"[filter] capping {authority} lookups at {conf.max_enrich} candidates (DOMAIN_MAX_ENRICH)")
         kept = kept[: conf.max_enrich]
 
     # Phase 4: enrich + hard gate
     enriched: list[dict[str, Any]] = []
-    metrics_for = _metrics_provider(conf, cache, dry_run)
+    metrics_by_domain = _enrich_all(conf, cache, authority, kept, audit, log)
     for record in kept:
-        try:
-            metrics = metrics_for(record)
-        except Exception as exc:  # one bad lookup must not sink the run
-            audit.record("enrich_error", record["domain"], error=str(exc))
-            log(f"[enrich] {record['domain']}: {exc}")
-            continue
+        metrics = metrics_by_domain.get(record["domain"])
+        if metrics is None:
+            continue  # lookup failed; already audited
         candidate = {**record, **metrics}
         candidate.pop("_fixture_metrics", None)
         audit.record("enriched", record["domain"], dr=metrics["dr"], referring_domains=metrics["referring_domains"], total_backlinks=metrics["total_backlinks"])
-        if enrich.passes_authority_gate(metrics, conf.gate):
+        if authority == "none" or enrich.passes_authority_gate(metrics, conf.gate):
             enriched.append(candidate)
         else:
             audit.record("gated_out", record["domain"], dr=metrics["dr"], referring_domains=metrics["referring_domains"])
     funnel["after_authority_gate"] = len(enriched)
-    log(f"[enrich] {len(enriched)} pass the authority gate (DR >= {conf.gate.min_dr:g}, refs >= {conf.gate.min_referring_domains})")
+    if authority == "none":
+        log(f"[enrich] no authority source configured; gate skipped, {len(enriched)} candidates go to scoring on name quality alone")
+    else:
+        log(f"[enrich] {len(enriched)} pass the authority gate via {authority} (DR >= {conf.gate.min_dr:g}, refs >= {conf.gate.min_referring_domains} where available)")
 
     # Phase 5: AI score
     scorer = _scorer(conf, dry_run, log)
@@ -184,13 +220,18 @@ def run(
     return RunResult(audit.run_id, shortlist, funnel, text, blocks)
 
 
-def _metrics_provider(conf: DomainFlipperConfig, cache: Cache, dry_run: bool) -> Callable[[dict[str, Any]], dict[str, Any]]:
-    if dry_run or not conf.dataforseo_auth:
-        def offline(record: dict[str, Any]) -> dict[str, Any]:
+NO_AUTHORITY = {"rank": None, "dr": None, "referring_domains": None, "total_backlinks": None, "spam_score": None, "first_seen": None, "authority_source": "none"}
+
+
+def _enrich_all(conf: DomainFlipperConfig, cache: Cache, authority: str, records: list[dict[str, Any]], audit: AuditLog, log) -> dict[str, dict[str, Any]]:
+    """Return metrics per domain. Missing entries mean the lookup failed (already audited)."""
+    out: dict[str, dict[str, Any]] = {}
+    if authority == "fixture":
+        for record in records:
             fixture = record.get("_fixture_metrics")
             if isinstance(fixture, dict):
                 rank_value = float(fixture.get("rank", fixture.get("dr", 0) * conf.dr_divisor))
-                return {
+                out[record["domain"]] = {
                     "rank": rank_value,
                     "dr": round(rank_value / conf.dr_divisor, 1),
                     "referring_domains": int(fixture.get("referring_domains", 0)),
@@ -198,12 +239,35 @@ def _metrics_provider(conf: DomainFlipperConfig, cache: Cache, dry_run: bool) ->
                     "spam_score": fixture.get("spam_score"),
                     "first_seen": fixture.get("first_seen"),
                 }
-            return enrich.synthetic_metrics(record["domain"])
-        return offline
-
-    def live(record: dict[str, Any]) -> dict[str, Any]:
-        return enrich.fetch_backlink_summary(record["domain"], conf.dataforseo_auth, cache=cache, dr_divisor=conf.dr_divisor)
-    return live
+            else:
+                out[record["domain"]] = enrich.synthetic_metrics(record["domain"])
+        return out
+    if authority == "none":
+        return {record["domain"]: dict(NO_AUTHORITY) for record in records}
+    if authority == "openpagerank":
+        if not conf.openpagerank_api_key:
+            raise SystemExit("AUTHORITY_SOURCE=openpagerank needs OPENPAGERANK_API_KEY")
+        domains = [r["domain"] for r in records]
+        for start in range(0, len(domains), enrich.OPENPAGERANK_BATCH):
+            chunk = domains[start:start + enrich.OPENPAGERANK_BATCH]
+            try:
+                out.update(enrich.fetch_openpagerank(chunk, conf.openpagerank_api_key, cache=cache))
+            except Exception as exc:
+                for domain in chunk:
+                    audit.record("enrich_error", domain, error=str(exc))
+                log(f"[enrich] Open PageRank batch of {len(chunk)} failed: {exc}")
+        return out
+    if authority == "dataforseo":
+        if not conf.dataforseo_auth:
+            raise SystemExit("AUTHORITY_SOURCE=dataforseo needs DATAFORSEO_LOGIN/PASSWORD or DATAFORSEO_AUTH")
+        for record in records:
+            try:
+                out[record["domain"]] = enrich.fetch_backlink_summary(record["domain"], conf.dataforseo_auth, cache=cache, dr_divisor=conf.dr_divisor)
+            except Exception as exc:  # one bad lookup must not sink the run
+                audit.record("enrich_error", record["domain"], error=str(exc))
+                log(f"[enrich] {record['domain']}: {exc}")
+        return out
+    raise SystemExit(f"unknown authority source {authority!r}")
 
 
 def _scorer(conf: DomainFlipperConfig, dry_run: bool, log) -> Callable[[dict[str, Any]], dict[str, Any]]:

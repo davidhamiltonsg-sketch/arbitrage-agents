@@ -16,12 +16,22 @@ def registrar_links(domain: str) -> dict[str, str]:
     }
 
 
+def metrics_line(item: dict[str, Any]) -> str:
+    dr = item.get("dr")
+    if dr is None:
+        return "Metrics: _no authority data (add an Open PageRank or DataForSEO key)_"
+    if item.get("referring_domains") is None:
+        rank = item.get("rank")
+        rank_text = f" | global rank *#{rank:,}*" if isinstance(rank, int) else ""
+        return f"Metrics: *authority {dr:g}/100* (Open PageRank){rank_text}"
+    return f"Metrics: *DR {dr:g}* | *{item.get('referring_domains', 0)} Ref Domains* | *{item.get('total_backlinks', 0)} Backlinks*"
+
+
 def format_item(index: int, item: dict[str, Any]) -> str:
     links = registrar_links(item["domain"])
     return (
         f"*{index}. {slack.escape(item['domain'])}* — `Score: {item['score']}/10` — *Est. Flip: ${item['suggested_price']:,}*\n"
-        f"• Metrics: *DR {item.get('dr', 0):g}* | *{item.get('referring_domains', 0)} Ref Domains* | "
-        f"*{item.get('total_backlinks', 0)} Backlinks* | Brandability: *{item['brandability']}/10*\n"
+        f"• {metrics_line(item)} | Brandability: *{item['brandability']}/10*\n"
         f"• Rationale: _{slack.escape(item.get('reasoning', ''))}_\n"
         f"• Checkout: <{links['godaddy']}|🛒 Register on GoDaddy> | <{links['namecheap']}|🛒 Register on Namecheap>"
     )

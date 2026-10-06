@@ -18,6 +18,8 @@ from typing import Any, Iterable
 from ..common import http
 
 WHOISFREAKS_DROPPED_URL = "https://files.whoisfreaks.com/v3.1/domains/dropped"
+# Free public sample feed (no key): 10,000 dropped domains per day, partial gTLD coverage.
+FREE_FEED_URL = "https://raw.githubusercontent.com/WhoisFreaks/daily-expired-and-dropped-domains/main/{name}"
 
 DOMAIN_KEYS = ("domain", "domain_name", "domainName", "name", "domainname")
 DROP_DATE_KEYS = ("drop_date", "dropDate", "drop_time", "date", "delete_date", "deleteDate", "dropped_date")
@@ -55,6 +57,32 @@ def describe_whoisfreaks_error(exc: http.HttpError) -> str:
     }
     hint = hints.get(exc.status or 0, f"WhoisFreaks request failed with HTTP {exc.status}.")
     return f"{hint} Server said: {detail or '(empty response)'}"
+
+
+def free_feed_filename(date: str | None) -> str:
+    return f"{date}-free-dropped-domains.csv" if date else "0-latest-free-dropped-domains.csv"
+
+
+def fetch_free_dropped_domains(*, date: str | None = None, timeout: float = 120.0) -> list[dict[str, Any]]:
+    """Fetch the free WhoisFreaks GitHub sample feed (no API key).
+
+    ``date`` selects that day's file (YYYY-MM-DD); if it does not exist yet the
+    latest file is used instead. Coverage is a 10k/day sample, so this is a
+    starting point rather than the full drop list.
+    """
+    url = FREE_FEED_URL.format(name=free_feed_filename(date))
+    try:
+        resp = http.request("GET", url, timeout=timeout)
+    except http.HttpError as exc:
+        if exc.status == 404 and date:
+            resp = http.request("GET", FREE_FEED_URL.format(name=free_feed_filename(None)), timeout=timeout)
+        else:
+            raise SourceError(f"Free dropped-domains feed unavailable: {exc}") from exc
+    records = parse_dropped_payload(resp.body)
+    for record in records:
+        record.setdefault("drop_date", date)
+        record["source"] = "whoisfreaks-free"
+    return records
 
 
 def load_fixture(path: str | Path) -> list[dict[str, Any]]:

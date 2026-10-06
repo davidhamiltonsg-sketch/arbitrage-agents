@@ -14,6 +14,26 @@ Each agent ships twice: as a Python package driven by `cli.py`, and as an
 importable n8n workflow under `n8n/`. Both share the same prompts, schemas,
 thresholds and Slack layout.
 
+## Free mode versus paid mode
+
+The Domain Flipper runs live with **no paid keys**:
+
+| Piece | Free option (default) | Paid option |
+| --- | --- | --- |
+| Dropped-domain feed | WhoisFreaks' public GitHub sample: 10,000 dropped domains a day, partial gTLD coverage, no key (`DOMAIN_SOURCE=whoisfreaks-free`) | WhoisFreaks Domainer package: ~400,000 a day, all TLDs (`DOMAIN_SOURCE=whoisfreaks` + `WHOISFREAKS_API_KEY`) |
+| Authority metrics | Open PageRank: free API key, 0 to 10 score from the Common Crawl host graph, no link counts (`AUTHORITY_SOURCE=openpagerank` + `OPENPAGERANK_API_KEY`) | DataForSEO: DR-like rank plus referring domains and backlinks (`AUTHORITY_SOURCE=dataforseo` + credentials) |
+| Scoring | Built-in rubric heuristic | OpenAI structured output (`OPENAI_API_KEY`) |
+| Delivery | GitHub issue + run summary | Slack webhook on top |
+
+`auto` (the default for both source settings) picks the paid option whenever
+its key is present and the free one otherwise. With no authority source at
+all the gate is skipped and domains are ranked on name quality alone, which
+is noticeably weaker; a free Open PageRank key is the single most useful
+addition. The free feed is a sample, so the best drops of the day may not be
+in it; that is the trade-off against the paid feed.
+
+The n8n workflow for Agent 1 still targets the paid APIs.
+
 ## Quick start
 
 Python 3.10 or newer, no packages to install.
@@ -61,9 +81,10 @@ servers on the cookbook schedule (06:00 UTC daily for the Domain Flipper,
 07:00 UTC Mondays for the SaaS Scout) and on demand. Everything can be done
 from the GitHub mobile app or a phone browser.
 
-1. **Add keys** at *Settings → Secrets and variables → Actions → New repository
-   secret*: `WHOISFREAKS_API_KEY`, `DATAFORSEO_LOGIN`, `DATAFORSEO_PASSWORD`
-   and, for AI scoring instead of the built-in heuristic, `OPENAI_API_KEY`. For the SaaS Scout also
+1. **Add keys** (all optional) at *Settings → Secrets and variables → Actions →
+   New repository secret*. Free and most useful first: `OPENPAGERANK_API_KEY`.
+   Paid upgrades: `WHOISFREAKS_API_KEY` (Domainer package), `DATAFORSEO_LOGIN`
+   and `DATAFORSEO_PASSWORD`, and `OPENAI_API_KEY` for AI scoring. For the SaaS Scout also
    `SAAS_LISTINGS_URL` (a URL that returns the listings JSON, such as an Apify
    dataset items URL) and optionally `BUILTWITH_API_KEY`, `SIMILARWEB_API_KEY`.
    Thresholds such as `DOMAIN_TOP_N` go under *Variables* instead of secrets.
@@ -76,9 +97,9 @@ from the GitHub mobile app or a phone browser.
    optional on top: set `SLACK_WEBHOOK_URL` and live runs post there too.
    Audit logs are attached to every run as an artifact.
 
-Missing keys degrade rather than fail: no OpenAI key uses the heuristic
-scorer, no enrichment keys skip that step, no listings URL makes the SaaS
-Scout fall back to a dry run.
+Missing keys degrade rather than fail: no feed key uses the free public
+sample feed, no authority key skips the gate, no OpenAI key uses the heuristic
+scorer, no listings URL makes the SaaS Scout fall back to a dry run.
 
 ### n8n
 

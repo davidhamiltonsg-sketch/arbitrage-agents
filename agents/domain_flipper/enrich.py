@@ -16,6 +16,9 @@ from ..common import http
 from ..common.cache import SEVEN_DAYS, Cache
 
 DATAFORSEO_URL = "https://api.dataforseo.com/v3/backlinks/summary/live"
+# Free alternative: Open PageRank (Common Crawl host graph), 0..10 score, 100 domains per call.
+OPENPAGERANK_URL = "https://openpagerank.com/api/v1.0/getPageRank"
+OPENPAGERANK_BATCH = 100
 
 
 class EnrichmentError(Exception):
@@ -95,5 +98,73 @@ def synthetic_metrics(domain: str) -> dict[str, Any]:
     }
 
 
+def parse_openpagerank(payload: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """Map each domain in an Open PageRank response to the common metrics shape.
+
+    Open PageRank has no referring-domain counts, so ``referring_domains`` and
+    ``total_backlinks`` are ``None`` and the authority gate applies to ``dr`` only.
+    ``dr`` is the 0..10 decimal score scaled to 0..100.
+    """
+    if payload.get("status_code") not in (None, 200):
+        raise EnrichmentError(f"Open PageRank error {payload.get('status_code')}: {payload.get('error') or payload.get('message')}")
+    out: dict[str, dict[str, Any]] = {}
+    for entry in payload.get("response") or []:
+        domain = str(entry.get("domain") or "").lower().strip()
+        if not domain:
+            continue
+        ok = entry.get("status_code") in (None, 200)
+        score = float(entry.get("page_rank_decimal") or 0) if ok else 0.0
+        try:
+            global_rank = int(entry.get("rank")) if ok and entry.get("rank") not in (None, "") else None
+        except (TypeError, ValueError):
+            global_rank = None
+        out[domain] = {
+            "rank": global_rank,
+            "dr": round(score * 10, 1),
+            "referring_domains": None,
+            "total_backlinks": None,
+            "spam_score": None,
+            "first_seen": None,
+            "authority_source": "openpagerank",
+        }
+    return out
+
+
+def fetch_openpagerank(
+    domains: list[str],
+    api_key: str,
+    *,
+    cache: Cache | None = None,
+    ttl_seconds: float = SEVEN_DAYS,
+    timeout: float = 60.0,
+    batch_size: int = OPENPAGERANK_BATCH,
+) -> dict[str, dict[str, Any]]:
+    from ..common.cache import cache_key
+
+    results: dict[str, dict[str, Any]] = {}
+    pending: list[str] = []
+    for domain in dict.fromkeys(domains):
+        hit = cache.get(cache_key("openpagerank", domain)) if cache else None
+        if hit is not None:
+            results[domain] = hit
+        else:
+            pending.append(domain)
+    for start in range(0, len(pending), batch_size):
+        chunk = pending[start:start + batch_size]
+        payload = http.get_json(OPENPAGERANK_URL, params={"domains[]": chunk}, headers={"API-OPR": api_key}, timeout=timeout)
+        parsed = parse_openpagerank(payload)
+        for domain in chunk:
+            metrics = parsed.get(domain) or {"rank": None, "dr": 0.0, "referring_domains": None, "total_backlinks": None, "spam_score": None, "first_seen": None, "authority_source": "openpagerank"}
+            results[domain] = metrics
+            if cache:
+                cache.set(cache_key("openpagerank", domain), metrics, ttl_seconds)
+    return results
+
+
 def passes_authority_gate(metrics: dict[str, Any], gate: AuthorityGate) -> bool:
-    return float(metrics.get("dr") or 0) >= gate.min_dr and int(metrics.get("referring_domains") or 0) >= gate.min_referring_domains
+    if float(metrics.get("dr") or 0) < gate.min_dr:
+        return False
+    refs = metrics.get("referring_domains")
+    if refs is None:  # source without referring-domain counts: DR-only gate
+        return True
+    return int(refs) >= gate.min_referring_domains
