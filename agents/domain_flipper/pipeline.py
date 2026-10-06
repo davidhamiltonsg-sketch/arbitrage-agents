@@ -207,6 +207,7 @@ def run(
         log(f"[fetch] loaded {len(records)} records from fixture {path.name}")
     else:
         source = conf.resolved_domain_source()
+        used_source = source
         try:
             records = None
             if source == "whoisfreaks":
@@ -221,6 +222,7 @@ def run(
                     log(f"::warning title=Paid feed unavailable::WhoisFreaks rejected the key; using the free public feed instead. {exc}")
                     audit.record("source_fallback", "whoisfreaks", reason=str(exc))
             if records is None:
+                used_source = "whoisfreaks-free"
                 records = sources.fetch_free_dropped_domains(date=explicit_date)
                 log(f"[fetch] free WhoisFreaks GitHub feed returned {len(records)} dropped domains ({'file for ' + explicit_date if explicit_date else 'latest file'})")
         except sources.SourceError as exc:
@@ -367,7 +369,7 @@ def run(
         mode="dry-run" if dry_run else "live",
         date=drop_date,
         sources={
-            "domain": "fixture" if (dry_run or fixture_path) else conf.resolved_domain_source(),
+            "domain": "fixture" if (dry_run or fixture_path) else used_source,
             "authority": authority,
             "deep_authority": "fixture" if dry_run else conf.resolved_deep_authority(),
             "availability": "sample" if dry_run else conf.resolved_availability_check(),

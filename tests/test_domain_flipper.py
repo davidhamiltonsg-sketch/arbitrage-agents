@@ -471,6 +471,7 @@ class PipelineTests(NoNetworkTestCase):
             result = pipeline.run(conf, sender=StdoutSender(io.StringIO()), log=lambda *a, **k: None)
         self.assertEqual(result.funnel["fetched"], 1)
         self.assertEqual(result.shortlist[0]["domain"], "fallback.com")
+        self.assertEqual(result.sources["domain"], "whoisfreaks-free")  # the record names the feed actually used
 
     def test_explicit_paid_source_does_not_fall_back(self):
         conf = pipeline.DomainFlipperConfig(domain_source="whoisfreaks", whoisfreaks_api_key="bad", cache_path=":memory:", audit_path=None)
