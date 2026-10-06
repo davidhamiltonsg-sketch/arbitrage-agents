@@ -1,0 +1,243 @@
+{
+  "agent": "domain-flipper",
+  "run_id": "20261006T205345Z-02b202",
+  "generated_at": "2026-10-06T20:56:12+00:00",
+  "date": "2026-10-05",
+  "mode": "live",
+  "sources": {
+    "domain": "whoisfreaks",
+    "authority": "openpagerank"
+  },
+  "funnel": {
+    "fetched": 10000,
+    "after_filters": 2935,
+    "after_authority_gate": 8,
+    "scored": 8,
+    "shortlisted": 5
+  },
+  "notes": [],
+  "run_url": "https://github.com/davidhamiltonsg-sketch/arbitrage-agents/actions/runs/37529871599",
+  "shortlist": [
+    {
+      "domain": "appsupportlocal.com",
+      "tld": "com",
+      "drop_date": null,
+      "registrar": null,
+      "source": "whoisfreaks-free",
+      "rank": 9551977,
+      "dr": 25.0,
+      "referring_domains": null,
+      "total_backlinks": null,
+      "spam_score": null,
+      "first_seen": null,
+      "authority_source": "openpagerank",
+      "score": 7,
+      "brandability": 6,
+      "suggested_price": 800,
+      "reasoning": "The domain has moderate brandability and a decent DR, but the lack of known referring domains limits its link equity potential.",
+      "wayback": {
+        "status": "ok",
+        "first_year": 2025,
+        "last_year": 2026,
+        "snapshot_months": 5,
+        "years_active": 2,
+        "latest_url": "https://web.archive.org/web/20260407191347/appsupportlocal.com",
+        "timeline_url": "https://web.archive.org/web/*/appsupportlocal.com",
+        "checked_at": "2026-10-06T20:53:58+00:00"
+      },
+      "trademark": {
+        "term": "appsupportlocal",
+        "risk": "low",
+        "flags": [],
+        "summary": "no famous-mark match in the built-in list",
+        "links": {
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=appsupportlocal",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=appsupportlocal",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/appsupportlocal"
+        }
+      },
+      "links": {
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=appsupportlocal.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=appsupportlocal.com",
+        "afternic": "https://www.afternic.com/domain/appsupportlocal.com"
+      }
+    },
+    {
+      "domain": "sdlhgc.com",
+      "tld": "com",
+      "drop_date": null,
+      "registrar": null,
+      "source": "whoisfreaks-free",
+      "rank": 9250312,
+      "dr": 25.1,
+      "referring_domains": null,
+      "total_backlinks": null,
+      "spam_score": null,
+      "first_seen": null,
+      "authority_source": "openpagerank",
+      "score": 6,
+      "brandability": 4,
+      "suggested_price": 400,
+      "reasoning": "The domain has a moderate DR but lacks known referring domains, limiting its link equity, while its brandability is hindered by its awkward combination of letters.",
+      "wayback": {
+        "status": "ok",
+        "first_year": 2017,
+        "last_year": 2026,
+        "snapshot_months": 11,
+        "years_active": 4,
+        "latest_url": "https://web.archive.org/web/20260609141118/sdlhgc.com",
+        "timeline_url": "https://web.archive.org/web/*/sdlhgc.com",
+        "checked_at": "2026-10-06T20:54:06+00:00"
+      },
+      "trademark": {
+        "term": "sdlhgc",
+        "risk": "low",
+        "flags": [],
+        "summary": "no famous-mark match in the built-in list",
+        "links": {
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=sdlhgc",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=sdlhgc",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/sdlhgc"
+        }
+      },
+      "links": {
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=sdlhgc.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=sdlhgc.com",
+        "afternic": "https://www.afternic.com/domain/sdlhgc.com"
+      }
+    },
+    {
+      "domain": "selfassemblysites.com",
+      "tld": "com",
+      "drop_date": null,
+      "registrar": null,
+      "source": "whoisfreaks-free",
+      "rank": 6034008,
+      "dr": 13.8,
+      "referring_domains": null,
+      "total_backlinks": null,
+      "spam_score": null,
+      "first_seen": null,
+      "authority_source": "openpagerank",
+      "score": 5,
+      "brandability": 6,
+      "suggested_price": 600,
+      "reasoning": "The domain has moderate brandability but limited link equity, making it suitable for niche applications.",
+      "wayback": {
+        "status": "ok",
+        "first_year": 2010,
+        "last_year": 2024,
+        "snapshot_months": 59,
+        "years_active": 11,
+        "latest_url": "https://web.archive.org/web/20240624124427/selfassemblysites.com",
+        "timeline_url": "https://web.archive.org/web/*/selfassemblysites.com",
+        "checked_at": "2026-10-06T20:54:11+00:00"
+      },
+      "trademark": {
+        "term": "selfassemblysites",
+        "risk": "low",
+        "flags": [],
+        "summary": "no famous-mark match in the built-in list",
+        "links": {
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=selfassemblysites",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=selfassemblysites",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/selfassemblysites"
+        }
+      },
+      "links": {
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=selfassemblysites.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=selfassemblysites.com",
+        "afternic": "https://www.afternic.com/domain/selfassemblysites.com"
+      }
+    },
+    {
+      "domain": "girlisus.com",
+      "tld": "com",
+      "drop_date": null,
+      "registrar": null,
+      "source": "whoisfreaks-free",
+      "rank": 31107436,
+      "dr": 11.2,
+      "referring_domains": null,
+      "total_backlinks": null,
+      "spam_score": null,
+      "first_seen": null,
+      "authority_source": "openpagerank",
+      "score": 5,
+      "brandability": 7,
+      "suggested_price": 600,
+      "reasoning": "The domain has moderate brandability with a catchy and memorable name, but its low DR suggests limited link equity.",
+      "wayback": {
+        "status": "error",
+        "first_year": null,
+        "last_year": null,
+        "snapshot_months": 0,
+        "years_active": 0,
+        "latest_url": null,
+        "timeline_url": "https://web.archive.org/web/*/girlisus.com",
+        "checked_at": "2026-10-06T20:54:19+00:00",
+        "error": "network error for https://web.archive.org/cdx/search/cdx?url=girlisus.com&output=json&fl=timestamp%2Cstatuscode%2Cmimetype&filter=statuscode%3A200&collapse=timestamp%3A6&limit=2000: <urlopen error tim"
+      },
+      "trademark": {
+        "term": "girlisus",
+        "risk": "low",
+        "flags": [],
+        "summary": "no famous-mark match in the built-in list",
+        "links": {
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=girlisus",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=girlisus",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/girlisus"
+        }
+      },
+      "links": {
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=girlisus.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=girlisus.com",
+        "afternic": "https://www.afternic.com/domain/girlisus.com"
+      }
+    },
+    {
+      "domain": "xoxiety.com",
+      "tld": "com",
+      "drop_date": null,
+      "registrar": null,
+      "source": "whoisfreaks-free",
+      "rank": 901398,
+      "dr": 15.6,
+      "referring_domains": null,
+      "total_backlinks": null,
+      "spam_score": null,
+      "first_seen": null,
+      "authority_source": "openpagerank",
+      "score": 5,
+      "brandability": 7,
+      "suggested_price": 600,
+      "reasoning": "The domain xoxiety.com has moderate brandability with a catchy and pronounceable name, but its low DR indicates limited link equity.",
+      "wayback": {
+        "status": "ok",
+        "first_year": 2007,
+        "last_year": 2011,
+        "snapshot_months": 33,
+        "years_active": 5,
+        "latest_url": "https://web.archive.org/web/20111101172634/xoxiety.com",
+        "timeline_url": "https://web.archive.org/web/*/xoxiety.com",
+        "checked_at": "2026-10-06T20:55:40+00:00"
+      },
+      "trademark": {
+        "term": "xoxiety",
+        "risk": "low",
+        "flags": [],
+        "summary": "no famous-mark match in the built-in list",
+        "links": {
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=xoxiety",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=xoxiety",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/xoxiety"
+        }
+      },
+      "links": {
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=xoxiety.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=xoxiety.com",
+        "afternic": "https://www.afternic.com/domain/xoxiety.com"
+      }
+    }
+  ]
+}
