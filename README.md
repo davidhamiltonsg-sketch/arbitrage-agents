@@ -110,10 +110,15 @@ through your claude.ai GitHub connector and needs no server of its own:
   Wayback history (first and last archived year, monthly snapshots, links to
   the timeline and the latest copy) and the trademark screen with prefilled
   USPTO, WIPO and EUIPO searches;
-- **Bought** / **Pass** decisions saved to `data/decisions.json`;
+- **Bought** / **Pass** decisions kept in the artifact's own store, so they
+  work even when the connector can only read the repository;
 - **Run now**, which opens an issue labelled `run-request`; the runner picks it
   up, replies with the digest and closes it;
 - thresholds edited in `settings.env`, loaded before every run.
+
+Run now and the settings editor need the Claude GitHub App to have **Contents**
+and **Issues** write access on this repository; until then the console shows
+direct GitHub links for the same actions.
 
 The runner writes `data/<agent>/latest.json` and a dated copy under
 `data/<agent>/history/` after each live run.

@@ -1,1 +1,1 @@
-Written by the scheduled runner (`<agent>/latest.json`, `<agent>/history/`) and by the dashboard (`decisions.json`). Do not edit by hand.
+Written by the scheduled runner (`<agent>/latest.json`, `<agent>/history/`). Do not edit by hand.
