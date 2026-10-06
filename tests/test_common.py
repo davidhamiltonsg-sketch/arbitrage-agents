@@ -29,6 +29,15 @@ class ConfigTests(unittest.TestCase):
             os.environ.pop("FOO", None)
             os.environ.pop("EMPTY", None)
 
+    def test_load_dotenv_fills_empty_env_values(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / ".env"
+            path.write_text("FILLME=5\nKEEPME=6\n")
+            with mock.patch.dict(os.environ, {"FILLME": "", "KEEPME": "orig"}, clear=False):
+                config.load_dotenv(path)
+                self.assertEqual(os.environ["FILLME"], "5")
+                self.assertEqual(os.environ["KEEPME"], "orig")
+
     def test_env_helpers(self):
         with mock.patch.dict(os.environ, {"N": "7", "F": "1.5", "B": "yes", "L": "Com, AI ,"}):
             self.assertEqual(config.env_int("N", 1), 7)

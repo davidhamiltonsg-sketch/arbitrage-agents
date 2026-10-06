@@ -30,7 +30,7 @@ def load_dotenv(path: str | os.PathLike | None = None, *, override: bool = False
         value = value.strip()
         if len(value) >= 2 and value[0] == value[-1] and value[0] in "'\"":
             value = value[1:-1]
-        if override or key not in os.environ:
+        if override or not os.environ.get(key):
             os.environ[key] = value
         loaded[key] = value
     return loaded

@@ -29,6 +29,7 @@ def build_parser() -> argparse.ArgumentParser:
     common.add_argument("--no-deliver", action="store_true", help="print the Slack payload instead of posting it")
     common.add_argument("--quiet", action="store_true", help="suppress progress logging")
     common.add_argument("--markdown-out", metavar="PATH", help="also write the digest as GitHub-flavoured Markdown to PATH")
+    common.add_argument("--json-out", metavar="PATH", help="also write the run record (shortlist, funnel, diligence) as JSON to PATH")
 
     flipper = sub.add_parser("domain-flipper", parents=[common], help="Agent 1: dropped-domain shortlist")
     flipper.add_argument("--date", help="drop date to fetch (YYYY-MM-DD); defaults to yesterday UTC")
@@ -50,6 +51,12 @@ def main(argv: list[str] | None = None) -> int:
         conf = saas_pipeline.SaasScoutConfig.from_env()
         result = saas_pipeline.run(conf, dry_run=args.dry_run, top=args.top, deliver=not args.no_deliver, listings_path=args.listings, log=log)
 
+    if args.json_out and hasattr(result, "export"):
+        import json
+        out_path = Path(args.json_out)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(json.dumps(result.export(), indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        log(f"[deliver] run record written to {args.json_out}")
     if args.markdown_out:
         Path(args.markdown_out).write_text(blocks_to_markdown(result.digest_text, result.digest_blocks), encoding="utf-8")
         log(f"[deliver] markdown digest written to {args.markdown_out}")

@@ -12,7 +12,7 @@ from ..common.cache import Cache
 from ..common.llm import LLMClient
 from ..common.ranking import rank
 from ..common.slack import Sender, SlackClient, StdoutSender
-from . import digest, enrich, filters, scoring, sources
+from . import digest, diligence, enrich, filters, scoring, sources
 
 FIXTURE_PATH = cfg.PROJECT_ROOT / "fixtures" / "dropped_domains.sample.json"
 
@@ -112,6 +112,35 @@ class RunResult:
     funnel: dict[str, int]
     digest_text: str
     digest_blocks: list[dict[str, Any]]
+    notes: list[str] = field(default_factory=list)
+    mode: str = "live"
+    date: str = ""
+    sources: dict[str, str] = field(default_factory=dict)
+
+    def export(self) -> dict[str, Any]:
+        """JSON-serialisable record for the dashboard and history."""
+        import os
+
+        run_url = None
+        if os.environ.get("GITHUB_RUN_ID") and os.environ.get("GITHUB_REPOSITORY"):
+            run_url = f"{os.environ.get('GITHUB_SERVER_URL', 'https://github.com')}/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}"
+        items = []
+        for item in self.shortlist:
+            clean = {k: v for k, v in item.items() if not k.startswith("_")}
+            clean["links"] = digest.registrar_links(item["domain"])
+            items.append(clean)
+        return {
+            "agent": "domain-flipper",
+            "run_id": self.run_id,
+            "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "date": self.date,
+            "mode": self.mode,
+            "sources": self.sources,
+            "funnel": self.funnel,
+            "notes": self.notes,
+            "run_url": run_url,
+            "shortlist": items,
+        }
 
 
 def yesterday_utc() -> str:
@@ -266,6 +295,17 @@ def run(
     for item in shortlist:
         audit.record("shortlisted", item["domain"], score=item["score"], suggested_price=item["suggested_price"])
 
+    # Phase 6b: due diligence on the shortlist only (Wayback history + trademark screen)
+    for item in shortlist:
+        if dry_run:
+            item.update(diligence.sample_diligence(item["domain"]))
+        else:
+            item["wayback"] = diligence.wayback_summary(item["domain"])
+            item["trademark"] = diligence.trademark_screen(item["domain"])
+        audit.record("diligence", item["domain"], wayback=item["wayback"].get("status"), trademark_risk=item["trademark"].get("risk"))
+    if shortlist:
+        log(f"[diligence] Wayback + trademark screen done for {len(shortlist)} shortlisted domains")
+
     # Phase 7: deliver
     text, blocks = digest.build_digest(shortlist, drop_date, funnel=funnel, notes=notes)
     out = sender or _sender(conf, deliver and not dry_run)
@@ -276,7 +316,13 @@ def run(
     if not dry_run and audit.flush_to_sheets():
         log("[audit] rows pushed to Google Sheets webhook")
     cache.close()
-    return RunResult(audit.run_id, shortlist, funnel, text, blocks)
+    return RunResult(
+        audit.run_id, shortlist, funnel, text, blocks,
+        notes=notes,
+        mode="dry-run" if dry_run else "live",
+        date=drop_date,
+        sources={"domain": "fixture" if (dry_run or fixture_path) else conf.resolved_domain_source(), "authority": authority},
+    )
 
 
 LLM_CIRCUIT_BREAKER = 3

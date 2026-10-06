@@ -11,6 +11,8 @@ on:
   schedule:
     - cron: "0 6 * * *"   # Domain Flipper, daily 06:00 UTC
     - cron: "0 7 * * 1"   # Dead SaaS Scout, Mondays 07:00 UTC
+  issues:
+    types: [labeled]      # an issue labelled run-request (from the dashboard) starts a live run
   workflow_dispatch:
     inputs:
       agent:
@@ -32,7 +34,7 @@ on:
         default: ""
 
 permissions:
-  contents: read
+  contents: write   # commits data/<agent>/latest.json and history after live runs
   issues: write
 
 concurrency:
@@ -41,6 +43,7 @@ concurrency:
 
 jobs:
   run:
+    if: github.event_name != 'issues' || github.event.label.name == 'run-request'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -90,6 +93,8 @@ jobs:
       - name: Decide what to run
         id: plan
         shell: bash
+        env:
+          REQUEST_TITLE: ${{ github.event.issue.title }}
         run: |
           if [ "${{ github.event_name }}" = "schedule" ]; then
             case "${{ github.event.schedule }}" in
@@ -98,6 +103,16 @@ jobs:
             esac
             echo "flags=" >> "$GITHUB_OUTPUT"
             echo "open_issue=true" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "issues" ]; then
+            title="$(printf '%s' "$REQUEST_TITLE" | tr '[:upper:]' '[:lower:]')"
+            case "$title" in
+              *saas*) echo "agents=saas-scout" >> "$GITHUB_OUTPUT" ;;
+              *both*) echo "agents=domain-flipper saas-scout" >> "$GITHUB_OUTPUT" ;;
+              *)      echo "agents=domain-flipper" >> "$GITHUB_OUTPUT" ;;
+            esac
+            echo "flags=" >> "$GITHUB_OUTPUT"
+            echo "open_issue=true" >> "$GITHUB_OUTPUT"
+            echo "request_issue=${{ github.event.issue.number }}" >> "$GITHUB_OUTPUT"
           else
             agent="${{ inputs.agent }}"
             [ "$agent" = "both" ] && agent="domain-flipper saas-scout"
@@ -117,6 +132,12 @@ jobs:
         if: contains(steps.plan.outputs.agents, 'saas-scout') && env.SAAS_LISTINGS_URL != '' && !contains(steps.plan.outputs.flags, '--dry-run')
         run: curl -fsSL "$SAAS_LISTINGS_URL" -o listings.json
 
+      - name: Load dashboard settings
+        shell: bash
+        run: |
+          # settings.env holds non-secret thresholds the dashboard edits; GitHub Variables with a value win.
+          if [ -f settings.env ]; then cp settings.env .env; echo "settings.env loaded"; else echo "no settings.env"; fi
+
       - name: Run
         shell: bash
         run: |
@@ -132,7 +153,7 @@ jobs:
               flags="--dry-run"
             fi
             [[ "$flags" == *--dry-run* ]] && echo "mode=sample data (dry run)" > "digests/$agent.mode" || echo "mode=live" > "digests/$agent.mode"
-            python3 cli.py "$agent" $flags --markdown-out "digests/$agent.md"
+            python3 cli.py "$agent" $flags --markdown-out "digests/$agent.md" --json-out "digests/$agent.json"
             echo "::endgroup::"
           done
 
@@ -158,6 +179,37 @@ jobs:
             gh label create "arbitrage-digest" --color 1D76DB --description "Agent shortlists" --force >/dev/null 2>&1 || true
             gh issue create --repo "${{ github.repository }}" --title "$title" --body-file "digests/$agent.issue.md" --label "arbitrage-digest"
           done
+
+      - name: Commit run records for the dashboard
+        if: ${{ !contains(steps.plan.outputs.flags, '--dry-run') }}
+        shell: bash
+        run: |
+          set -e
+          for f in digests/*.json; do
+            [ -f "$f" ] || continue
+            agent=$(basename "$f" .json)
+            mkdir -p "data/$agent/history"
+            cp "$f" "data/$agent/latest.json"
+            cp "$f" "data/$agent/history/$(date -u +%Y-%m-%d)-run${{ github.run_number }}.json"
+          done
+          git config user.name "arbitrage-agents[bot]"
+          git config user.email "arbitrage-agents@users.noreply.github.com"
+          git add data
+          if git diff --cached --quiet; then echo "no data changes"; exit 0; fi
+          git commit -q -m "data: run #${{ github.run_number }} records [skip ci]"
+          for i in 1 2 3; do git pull -q --rebase origin main && git push -q origin HEAD:main && break || sleep 5; done
+
+      - name: Reply to the run request
+        if: steps.plan.outputs.request_issue != ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for f in digests/*.md; do
+            { echo "Run finished: [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"; echo; cat "$f"; } > reply.md
+            gh issue comment "${{ steps.plan.outputs.request_issue }}" --repo "${{ github.repository }}" --body-file reply.md
+          done
+          gh issue close "${{ steps.plan.outputs.request_issue }}" --repo "${{ github.repository }}" --reason completed
 
       - name: Upload audit logs
         if: always()

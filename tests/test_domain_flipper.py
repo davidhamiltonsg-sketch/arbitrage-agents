@@ -240,6 +240,43 @@ class ScoringTests(unittest.TestCase):
         self.assertEqual(kwargs["schema_name"], scoring.SCHEMA_NAME)
 
 
+class DiligenceTests(unittest.TestCase):
+    def test_cdx_summary(self):
+        from agents.domain_flipper import diligence
+        payload = [["timestamp", "statuscode", "mimetype"], ["20110305000000", "200", "text/html"], ["20150101000000", "200", "text/html"], ["20230707000000", "200", "text/html"]]
+        w = diligence.wayback_summary("x.com", fetch=lambda d: payload)
+        self.assertEqual((w["status"], w["first_year"], w["last_year"], w["snapshot_months"], w["years_active"]), ("ok", 2011, 2023, 3, 3))
+        self.assertTrue(w["latest_url"].startswith("https://web.archive.org/web/20230707000000/"))
+        self.assertEqual(diligence.wayback_summary("x.com", fetch=lambda d: [])["status"], "none")
+        err = diligence.wayback_summary("x.com", fetch=lambda d: (_ for _ in ()).throw(RuntimeError("down")))
+        self.assertEqual(err["status"], "error")
+        self.assertIn("archived 2011–2023", diligence.describe_wayback(w))
+
+    def test_trademark_screen(self):
+        from agents.domain_flipper import diligence
+        self.assertEqual(diligence.trademark_screen("lumenpath.com")["risk"], "low")
+        hit = diligence.trademark_screen("bestnikeshoes.com")
+        self.assertEqual(hit["risk"], "high")
+        self.assertIn("nike", hit["flags"])
+        self.assertIn("query=bestnikeshoes", hit["links"]["uspto"])
+
+    def test_export_and_dry_run_diligence(self):
+        sender = StdoutSender(io.StringIO())
+        result = pipeline.run(pipeline.DomainFlipperConfig(), dry_run=True, sender=sender, log=lambda *a, **k: None)
+        record = result.export()
+        self.assertEqual(record["mode"], "dry-run")
+        self.assertEqual(len(record["shortlist"]), 5)
+        first = record["shortlist"][0]
+        self.assertIn("wayback", first)
+        self.assertIn("trademark", first)
+        self.assertIn("godaddy", first["links"])
+        self.assertFalse(any(k.startswith("_") for k in first))
+        import json
+        json.dumps(record)
+        self.assertIn("History:", sender.sent[0]["blocks"][2]["text"]["text"])
+        self.assertIn("Trademark:", sender.sent[0]["blocks"][2]["text"]["text"])
+
+
 class DigestTests(unittest.TestCase):
     def test_links_and_blocks(self):
         item = {"domain": "neuro.ai", "score": 9, "suggested_price": 3200, "dr": 32.0, "referring_domains": 64, "total_backlinks": 910, "brandability": 8, "reasoning": "a <b> & c"}

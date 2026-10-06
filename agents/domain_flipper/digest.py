@@ -27,11 +27,32 @@ def metrics_line(item: dict[str, Any]) -> str:
     return f"Metrics: *DR {dr:g}* | *{item.get('referring_domains', 0)} Ref Domains* | *{item.get('total_backlinks', 0)} Backlinks*"
 
 
+def diligence_lines(item: dict[str, Any]) -> str:
+    from . import diligence
+
+    out = []
+    w = item.get("wayback")
+    if w:
+        text = diligence.describe_wayback(w)
+        link = w.get("latest_url") or w.get("timeline_url")
+        out.append(f"• History: {slack.escape(text)} · <{w.get('timeline_url')}|Wayback timeline>" + (f" · <{link}|latest copy>" if w.get("latest_url") else ""))
+    t = item.get("trademark")
+    if t:
+        risk = {"low": "🟢", "medium": "🟠", "high": "🔴"}.get(t.get("risk"), "⚪")
+        links = t.get("links", {})
+        out.append(
+            f"• Trademark: {risk} {slack.escape(t.get('summary', ''))} · "
+            f"<{links.get('uspto')}|USPTO> | <{links.get('wipo')}|WIPO> | <{links.get('euipo')}|EUIPO>"
+        )
+    return ("\n" + "\n".join(out)) if out else ""
+
+
 def format_item(index: int, item: dict[str, Any]) -> str:
     links = registrar_links(item["domain"])
     return (
         f"*{index}. {slack.escape(item['domain'])}* — `Score: {item['score']}/10` — *Est. Flip: ${item['suggested_price']:,}*\n"
-        f"• {metrics_line(item)} | Brandability: *{item['brandability']}/10*\n"
+        f"• {metrics_line(item)} | Brandability: *{item['brandability']}/10*"
+        f"{diligence_lines(item)}\n"
         f"• Rationale: _{slack.escape(item.get('reasoning', ''))}_\n"
         f"• Checkout: <{links['godaddy']}|🛒 Register on GoDaddy> | <{links['namecheap']}|🛒 Register on Namecheap>"
     )
