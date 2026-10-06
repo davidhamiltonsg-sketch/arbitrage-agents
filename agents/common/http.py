@@ -20,6 +20,11 @@ class HttpError(Exception):
         self.url = url
         self.body = body
 
+    def __str__(self) -> str:  # pragma: no cover - formatting only
+        base = super().__str__()
+        detail = self.body.decode("utf-8", errors="replace").strip()
+        return f"{base}: {detail[:500]}" if detail else base
+
 
 @dataclass
 class Response:
@@ -34,6 +39,19 @@ class Response:
 
     def json(self) -> Any:
         return json.loads(self.body.decode("utf-8"))
+
+
+SECRET_PARAMS = ("apikey", "api_key", "key", "token", "password")
+
+
+def redact_url(url: str) -> str:
+    """Mask credential-looking query parameters so URLs are safe to log."""
+    parts = urllib.parse.urlsplit(url)
+    if not parts.query:
+        return url
+    pairs = urllib.parse.parse_qsl(parts.query, keep_blank_values=True)
+    masked = [(k, "***" if k.lower() in SECRET_PARAMS else v) for k, v in pairs]
+    return urllib.parse.urlunsplit(parts._replace(query=urllib.parse.urlencode(masked)))
 
 
 def build_url(url: str, params: Mapping[str, Any] | None) -> str:
@@ -82,12 +100,12 @@ def request(
                 return Response(resp.status, {k.lower(): v for k, v in resp.headers.items()}, body, full_url)
         except urllib.error.HTTPError as exc:
             body = exc.read() if hasattr(exc, "read") else b""
-            last_error = HttpError(f"HTTP {exc.code} for {full_url}", status=exc.code, url=full_url, body=body)
+            last_error = HttpError(f"HTTP {exc.code} for {redact_url(full_url)}", status=exc.code, url=full_url, body=body)
             if exc.code not in RETRY_STATUSES or attempt == retries:
                 raise last_error from exc
             delay = _retry_delay(exc.headers.get("Retry-After") if exc.headers else None, backoff, attempt)
         except (urllib.error.URLError, TimeoutError, ConnectionError, OSError) as exc:
-            last_error = HttpError(f"network error for {full_url}: {exc}", url=full_url)
+            last_error = HttpError(f"network error for {redact_url(full_url)}: {exc}", url=full_url)
             if attempt == retries:
                 raise last_error from exc
             delay = backoff * (2 ** attempt)

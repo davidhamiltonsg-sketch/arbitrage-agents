@@ -43,6 +43,14 @@ class HttpTests(unittest.TestCase):
         self.assertEqual(http.build_url("https://x.test/a", {"k": "v", "e": None, "z": ""}), "https://x.test/a?k=v")
         self.assertEqual(http.build_url("https://x.test/a?x=1", {"k": "v w"}), "https://x.test/a?x=1&k=v+w")
 
+    def test_redact_url_masks_credentials(self):
+        self.assertEqual(http.redact_url("https://x.test/a?apiKey=SECRET&date=1"), "https://x.test/a?apiKey=%2A%2A%2A&date=1")
+        self.assertEqual(http.redact_url("https://x.test/a"), "https://x.test/a")
+
+    def test_http_error_str_includes_body(self):
+        err = http.HttpError("HTTP 401 for u", status=401, body=b'{"m":"bad key"}')
+        self.assertIn("bad key", str(err))
+
     def test_retries_on_429_then_succeeds(self):
         import urllib.error
 

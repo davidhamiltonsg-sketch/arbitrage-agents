@@ -54,6 +54,26 @@ class SourceParsingTests(unittest.TestCase):
         self.assertEqual(out[0]["domain"], "a.com")
 
 
+    def test_fetch_auth_failure_is_actionable(self):
+        from agents.common.http import HttpError
+
+        def fake_request(method, url, **kwargs):
+            raise HttpError("HTTP 401 for x", status=401, url=url, body=b'{"error":"invalid api key"}')
+
+        with mock.patch.object(sources.http, "request", fake_request):
+            with self.assertRaises(sources.SourceError) as ctx:
+                sources.fetch_dropped_domains("bad", date="2026-10-05")
+        message = str(ctx.exception)
+        self.assertIn("WHOISFREAKS_API_KEY", message)
+        self.assertIn("Domainer package", message)
+        self.assertIn("invalid api key", message)
+
+    def test_describe_error_covers_other_statuses(self):
+        from agents.common.http import HttpError
+        self.assertIn("earlier day", sources.describe_whoisfreaks_error(HttpError("x", status=404)))
+        self.assertIn("HTTP 500", sources.describe_whoisfreaks_error(HttpError("x", status=500)))
+
+
 class FilterTests(unittest.TestCase):
     def setUp(self):
         self.cfg = filters.FilterConfig()
@@ -186,6 +206,13 @@ class PipelineTests(NoNetworkTestCase):
         conf = pipeline.DomainFlipperConfig(whoisfreaks_api_key=None)
         with self.assertRaises(SystemExit):
             pipeline.run(conf, dry_run=False, sender=StdoutSender(io.StringIO()), log=lambda *a, **k: None)
+
+    def test_live_mode_feed_failure_exits_cleanly(self):
+        conf = pipeline.DomainFlipperConfig(whoisfreaks_api_key="wf", cache_path=":memory:", audit_path=None)
+        with mock.patch.object(pipeline.sources, "fetch_dropped_domains", side_effect=sources.SourceError("boom")):
+            with self.assertRaises(SystemExit) as ctx:
+                pipeline.run(conf, sender=StdoutSender(io.StringIO()), log=lambda *a, **k: None)
+        self.assertIn("boom", str(ctx.exception))
 
     def test_live_mode_with_mocked_services(self):
         conf = pipeline.DomainFlipperConfig(

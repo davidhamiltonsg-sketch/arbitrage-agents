@@ -33,8 +33,28 @@ def fetch_dropped_domains(
     timeout: float = 180.0,
 ) -> list[dict[str, Any]]:
     params = {"apiKey": api_key, "date": date, "tlds": ",".join(tlds) if tlds else None}
-    resp = http.request("GET", WHOISFREAKS_DROPPED_URL, params=params, timeout=timeout)
+    try:
+        resp = http.request("GET", WHOISFREAKS_DROPPED_URL, params=params, timeout=timeout)
+    except http.HttpError as exc:
+        raise SourceError(describe_whoisfreaks_error(exc)) from exc
     return parse_dropped_payload(resp.body)
+
+
+class SourceError(Exception):
+    """A feed could not be fetched; the message is written for the operator."""
+
+
+def describe_whoisfreaks_error(exc: http.HttpError) -> str:
+    detail = exc.body.decode("utf-8", errors="replace").strip()[:300]
+    hints = {
+        401: "WhoisFreaks rejected the request (401). On this endpoint that means one of: the key is wrong or inactive, or the account has no active Domainer package. The Expired/Dropped Domains feed is sold as the separate 'Domainer' package (see whoisfreaks.com/pricing), not included with WHOIS or free API plans. Check WHOISFREAKS_API_KEY has no spaces and that the Domainer package is active in the billing dashboard.",
+        402: "WhoisFreaks reports no credit or an inactive plan (402). Activate the Domainer package in the WhoisFreaks billing dashboard.",
+        403: "WhoisFreaks refused the request (403). The key is valid but not allowed to use the dropped-domains feed; enable the Domainer package on your plan.",
+        404: "WhoisFreaks has no dropped-domains file for the requested date (404). Try --date with an earlier day; the daily file is usually published around 03:00 UTC.",
+        429: "WhoisFreaks rate limit hit (429). Wait a few minutes and re-run.",
+    }
+    hint = hints.get(exc.status or 0, f"WhoisFreaks request failed with HTTP {exc.status}.")
+    return f"{hint} Server said: {detail or '(empty response)'}"
 
 
 def load_fixture(path: str | Path) -> list[dict[str, Any]]:

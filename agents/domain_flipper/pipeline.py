@@ -111,7 +111,10 @@ def run(
     else:
         if not conf.whoisfreaks_api_key:
             raise SystemExit("WHOISFREAKS_API_KEY is not set (use --dry-run to exercise the pipeline without keys)")
-        records = sources.fetch_dropped_domains(conf.whoisfreaks_api_key, date=drop_date, tlds=conf.tlds)
+        try:
+            records = sources.fetch_dropped_domains(conf.whoisfreaks_api_key, date=drop_date, tlds=conf.tlds)
+        except sources.SourceError as exc:
+            raise SystemExit(f"[fetch] {exc}") from exc
         log(f"[fetch] WhoisFreaks returned {len(records)} dropped domains for {drop_date}")
     funnel["fetched"] = len(records)
     for record in records:
