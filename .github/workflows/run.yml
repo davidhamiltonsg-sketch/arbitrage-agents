@@ -1,0 +1,162 @@
+name: Run arbitrage agents
+
+# Runs the agents on GitHub's servers so nothing needs to be installed locally.
+# Schedules are UTC. Trigger a one-off run from the Actions tab ("Run workflow").
+# Every run writes its digest to the run's Summary page; live runs (and runs
+# with "Open issue" ticked) also open a GitHub issue so the shortlist reaches
+# your phone through the GitHub app. Slack is optional on top of that.
+on:
+  schedule:
+    - cron: "0 6 * * *"   # Domain Flipper, daily 06:00 UTC
+    - cron: "0 7 * * 1"   # Dead SaaS Scout, Mondays 07:00 UTC
+  workflow_dispatch:
+    inputs:
+      agent:
+        description: Which agent to run
+        type: choice
+        default: domain-flipper
+        options: [domain-flipper, saas-scout, both]
+      dry_run:
+        description: Dry run (fixtures only, no keys)
+        type: boolean
+        default: true
+      open_issue:
+        description: Open a GitHub issue with the digest (always on for live runs)
+        type: boolean
+        default: false
+      top:
+        description: Shortlist size (blank = agent default)
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: arbitrage-agents-run
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # --- secrets: add under Settings > Secrets and variables > Actions > Secrets
+      WHOISFREAKS_API_KEY: ${{ secrets.WHOISFREAKS_API_KEY }}
+      DATAFORSEO_LOGIN: ${{ secrets.DATAFORSEO_LOGIN }}
+      DATAFORSEO_PASSWORD: ${{ secrets.DATAFORSEO_PASSWORD }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      BUILTWITH_API_KEY: ${{ secrets.BUILTWITH_API_KEY }}
+      SIMILARWEB_API_KEY: ${{ secrets.SIMILARWEB_API_KEY }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      SLACK_WEBHOOK_URL_DOMAIN: ${{ secrets.SLACK_WEBHOOK_URL_DOMAIN }}
+      SLACK_WEBHOOK_URL_SAAS: ${{ secrets.SLACK_WEBHOOK_URL_SAAS }}
+      GOOGLE_SHEETS_WEBHOOK_URL: ${{ secrets.GOOGLE_SHEETS_WEBHOOK_URL }}
+      # URL of a JSON listings export for the SaaS Scout (e.g. an Apify dataset items URL)
+      SAAS_LISTINGS_URL: ${{ secrets.SAAS_LISTINGS_URL }}
+      # --- non-secret knobs: Settings > Secrets and variables > Actions > Variables
+      DOMAIN_TLDS: ${{ vars.DOMAIN_TLDS }}
+      DOMAIN_TOP_N: ${{ vars.DOMAIN_TOP_N }}
+      DOMAIN_MIN_DR: ${{ vars.DOMAIN_MIN_DR }}
+      DOMAIN_MIN_REFERRING_DOMAINS: ${{ vars.DOMAIN_MIN_REFERRING_DOMAINS }}
+      DOMAIN_MAX_ENRICH: ${{ vars.DOMAIN_MAX_ENRICH }}
+      SAAS_TOP_N: ${{ vars.SAAS_TOP_N }}
+      SAAS_MAX_ASKING_PRICE: ${{ vars.SAAS_MAX_ASKING_PRICE }}
+      SAAS_SOURCES: file
+      SAAS_LISTINGS_FILE: listings.json
+      AGENTS_CACHE_PATH: .cache/agents.sqlite
+      AUDIT_LOG_DIR: logs
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Restore enrichment cache
+        uses: actions/cache@v4
+        with:
+          path: .cache
+          key: enrichment-cache-${{ github.run_id }}
+          restore-keys: enrichment-cache-
+
+      - name: Decide what to run
+        id: plan
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            case "${{ github.event.schedule }}" in
+              "0 7 * * 1") echo "agents=saas-scout" >> "$GITHUB_OUTPUT" ;;
+              *)           echo "agents=domain-flipper" >> "$GITHUB_OUTPUT" ;;
+            esac
+            echo "flags=" >> "$GITHUB_OUTPUT"
+            echo "open_issue=true" >> "$GITHUB_OUTPUT"
+          else
+            agent="${{ inputs.agent }}"
+            [ "$agent" = "both" ] && agent="domain-flipper saas-scout"
+            echo "agents=$agent" >> "$GITHUB_OUTPUT"
+            flags=""
+            [ "${{ inputs.dry_run }}" = "true" ] && flags="--dry-run"
+            [ -n "${{ inputs.top }}" ] && flags="$flags --top ${{ inputs.top }}"
+            echo "flags=$flags" >> "$GITHUB_OUTPUT"
+            if [ "${{ inputs.dry_run }}" != "true" ] || [ "${{ inputs.open_issue }}" = "true" ]; then
+              echo "open_issue=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "open_issue=false" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
+      - name: Fetch SaaS listings export
+        if: contains(steps.plan.outputs.agents, 'saas-scout') && env.SAAS_LISTINGS_URL != '' && !contains(steps.plan.outputs.flags, '--dry-run')
+        run: curl -fsSL "$SAAS_LISTINGS_URL" -o listings.json
+
+      - name: Run
+        shell: bash
+        run: |
+          mkdir -p digests
+          for agent in ${{ steps.plan.outputs.agents }}; do
+            echo "::group::$agent ${{ steps.plan.outputs.flags }}"
+            flags="${{ steps.plan.outputs.flags }}"
+            if [ "$agent" = "saas-scout" ] && [ ! -f listings.json ] && [[ "$flags" != *--dry-run* ]]; then
+              echo "::warning::No listings.json: set the SAAS_LISTINGS_URL secret. Falling back to --dry-run."
+              flags="--dry-run"
+            elif [ "$agent" = "domain-flipper" ] && [ -z "$WHOISFREAKS_API_KEY" ] && [[ "$flags" != *--dry-run* ]]; then
+              echo "::warning::WHOISFREAKS_API_KEY secret is not set. Falling back to --dry-run."
+              flags="--dry-run"
+            fi
+            [[ "$flags" == *--dry-run* ]] && echo "mode=sample data (dry run)" > "digests/$agent.mode" || echo "mode=live" > "digests/$agent.mode"
+            python3 cli.py "$agent" $flags --markdown-out "digests/$agent.md"
+            echo "::endgroup::"
+          done
+
+      - name: Publish digests to the run summary
+        shell: bash
+        run: |
+          for f in digests/*.md; do
+            agent=$(basename "$f" .md)
+            { cat "$f"; echo; echo "_$(cat "digests/$agent.mode") · run [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})_"; echo; } >> "$GITHUB_STEP_SUMMARY"
+          done
+
+      - name: Open a GitHub issue with each digest
+        if: steps.plan.outputs.open_issue == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for f in digests/*.md; do
+            agent=$(basename "$f" .md)
+            mode=$(cut -d= -f2 "digests/$agent.mode")
+            title="$(head -n1 "$f" | sed 's/^## //') [$mode]"
+            { cat "$f"; echo; echo "_${mode} · run [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})_"; } > "digests/$agent.issue.md"
+            gh label create "arbitrage-digest" --color 1D76DB --description "Agent shortlists" --force >/dev/null 2>&1 || true
+            gh issue create --repo "${{ github.repository }}" --title "$title" --body-file "digests/$agent.issue.md" --label "arbitrage-digest"
+          done
+
+      - name: Upload audit logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-logs-${{ github.run_id }}
+          path: logs
+          if-no-files-found: ignore
+          retention-days: 30

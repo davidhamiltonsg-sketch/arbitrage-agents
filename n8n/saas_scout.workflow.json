@@ -1,0 +1,451 @@
+{
+  "name": "Agent 2 — Dead SaaS Scout",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 7 * * 1"
+            }
+          ]
+        }
+      },
+      "id": "5a403bbe-9f26-56ef-8263-016856041d54",
+      "name": "Weekly Monday 07:00 UTC",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -300,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.apify.com/v2/datasets/REPLACE_DATASET_ID/items?token=REPLACE_TOKEN&clean=true",
+        "sendQuery": false,
+        "queryParameters": {
+          "parameters": []
+        },
+        "options": {}
+      },
+      "id": "23c8b351-d299-5651-b7ce-6592296a6b6c",
+      "name": "Fetch listings feed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -60,
+        200
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "jsCode": "// Phase 3: deterministic listing filters. Input: one item per listing from\n// the listings feed (any JSON array of objects with the fields below).\nconst MAX_PRICE = 10000, MIN_INACTIVE_DAYS = 540, MIN_USERS = 1000;\nconst BLOCKED = ['crypto', 'gambling', 'adult', 'vpn', 'dating', 'casino', 'betting'];\nconst num = (v) => (v == null || v === '' ? null : Number(String(v).replace(/[^\\d.]/g, '')) || null);\nconst parseDate = (v) => { const d = new Date(v); return isNaN(d) ? null : d; };\nconst hostOf = (u) => { try { return new URL(u.includes('//') ? u : 'https://' + u).hostname.replace(/^www\\./, ''); } catch { return null; } };\n\nconst seen = new Set();\nconst out = [];\nfor (const item of $input.all()) {\n  const r = item.json;\n  const source_url = r.source_url || r.url || '';\n  if (seen.has(source_url)) continue;\n  seen.add(source_url);\n  const asking_price = num(r.asking_price ?? r.price);\n  if (asking_price != null && asking_price > MAX_PRICE) continue;\n  const updated = parseDate(r.last_updated_date || r.last_updated || r.updated);\n  if (!updated) continue;\n  if ((Date.now() - updated.getTime()) / 86400000 < MIN_INACTIVE_DAYS) continue;\n  const hay = `${r.category || ''} ${r.name || r.title || ''}`.toLowerCase();\n  if (BLOCKED.some((b) => hay.includes(b))) continue;\n  const claimed_users = num(r.claimed_users ?? r.users);\n  if (claimed_users == null || claimed_users < MIN_USERS) continue;\n  out.push({ json: {\n    asset_id: String(r.asset_id || r.id || source_url), name: r.name || r.title || source_url, category: r.category || 'unknown',\n    source_url, asking_price, claimed_users, last_updated_date: updated.toISOString().slice(0, 10),\n    domain: r.domain || hostOf(r.website || r.homepage || '') || null, description: String(r.description || '').slice(0, 1500),\n    seller_contact_url: r.seller_contact_url || r.contact_url || source_url,\n  } });\n}\nreturn out;\n"
+      },
+      "id": "038be723-c5d5-5cb5-ba31-8f0bb01e6489",
+      "name": "Deterministic filter",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        180,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.builtwith.com/v21/api.json",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "LOOKUP",
+              "value": "={{ $json.domain || 'example.invalid' }}"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 5,
+              "batchInterval": 1000
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth"
+      },
+      "id": "1452a309-3fd4-5d2d-abef-71ce9609c1f5",
+      "name": "Tech stack (BuiltWith)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        420,
+        200
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "",
+          "name": "BuiltWith KEY"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Attach BuiltWith technology names to each listing (same order as the filter output).\nconst listings = $('Deterministic filter').all().map((i) => i.json);\nreturn $input.all().map((item, idx) => {\n  const names = [];\n  for (const res of (item.json.Results || [])) for (const p of ((res.Result || {}).Paths || [])) for (const t of (p.Technologies || [])) if (t.Name && !names.includes(t.Name)) names.push(t.Name);\n  return { json: { ...listings[idx], tech_stack: names.slice(0, 25) } };\n});\n"
+      },
+      "id": "4c19cc8e-cc90-5bce-a44e-6eec1b404c28",
+      "name": "Attach tech stack",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.similarweb.com/v1/website/{{ $json.domain || 'example.invalid' }}/total-traffic-and-engagement/visits",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "start_date",
+              "value": "={{ $today.minus({months: 3}).toFormat('yyyy-MM') }}"
+            },
+            {
+              "name": "end_date",
+              "value": "={{ $today.minus({months: 1}).toFormat('yyyy-MM') }}"
+            },
+            {
+              "name": "country",
+              "value": "world"
+            },
+            {
+              "name": "granularity",
+              "value": "monthly"
+            },
+            {
+              "name": "main_domain_only",
+              "value": "false"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 5,
+              "batchInterval": 1000
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth"
+      },
+      "id": "4d3ce62c-f45a-5a9e-9452-5f649d34ad8f",
+      "name": "Traffic (Similarweb)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        200
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "",
+          "name": "Similarweb api_key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Phase 4 gate: average Similarweb monthly visits >= 800 OR installs >= 1200.\nconst MIN_VISITS = 800, MIN_INSTALLS = 1200;\nconst listings = $('Attach tech stack').all().map((i) => i.json);\nconst out = [];\n$input.all().forEach((item, idx) => {\n  const l = listings[idx];\n  if (!l) return;\n  const pts = (item.json.visits || []).map((p) => Number(p.visits || 0));\n  const monthly_visits = pts.length ? Math.round(pts.reduce((a, b) => a + b, 0) / pts.length) : null;\n  if ((monthly_visits || 0) < MIN_VISITS && (l.claimed_users || 0) < MIN_INSTALLS) return;\n  out.push({ json: { ...l, monthly_visits } });\n});\nreturn out;\n"
+      },
+      "id": "7cdc95e4-f869-58f9-9eda-d66eacdb5334",
+      "name": "Traffic gate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1140,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ (() => {\n  const system = 'You are an expert micro-private equity investor and full-stack AI engineer. You specialize in buying obsolete, abandoned web tools and converting their rigid dashboards into autonomous, agent-native workflows.\\n\\nEvaluation Objectives:\\n1. Feasibility of Agent-Native Rebuild: Can this tool\\'s manual user workflows (e.g. clicking buttons, copy-pasting text, running manual reports) be completely replaced by an LLM-driven agent (e.g. LangGraph, FastAPI, a Chrome extension calling a hosted model API) in under 16 hours of engineering?\\n2. Score: 1-10 overall investment grade.\\n3. Estimated Flip Value: Fair market value once refactored with a modern agent UI and active subscription billing.\\n4. One-Sentence Rebuild Blueprint: Concrete architecture statement (e.g. \"Replace brittle Selenium scraper with crawl4ai + structured LLM parsing\").\\n\\nReturn strictly valid JSON matching the required schema.';\n  const traffic = [$json.monthly_visits ? `${$json.monthly_visits} monthly visits` : null, $json.claimed_users ? `${$json.claimed_users} claimed users/installs` : null].filter(Boolean).join(' / ') || 'unknown';\n  const user = `Analyze this neglected asset:\\nProduct Name: ${$json.name}\\nCategory: ${$json.category}\\nCurrent Tech Stack: ${($json.tech_stack || []).join(', ') || 'unknown'}\\nMonthly Traffic / Installs: ${traffic}\\nLast Updated: ${$json.last_updated_date}\\nAsking Price: ${$json.asking_price != null ? '$' + $json.asking_price : 'not listed (outreach target)'}\\nProduct Description: ${$json.description || 'n/a'}`;\n  const properties = {\n    score: { type: 'integer', description: 'Composite acquisition viability score from 1 to 10.' },\n    agent_rewrite_potential: { type: 'integer', description: 'How readily manual workflows convert into autonomous LLM functions, 1 to 10.' },\n    estimated_flip_value: { type: 'integer', description: 'Projected resale valuation in USD following agent modernisation.' },\n    rebuild_architecture_blueprint: { type: 'string', description: 'Precise technical stack prescription to build the replacement agent in one weekend.' },\n    reasoning: { type: 'string', description: 'One-sentence investment summary weighing user retention against execution complexity.' },\n  };\n  return JSON.stringify({\n    model: 'gpt-4o', temperature: 0.15, max_tokens: 500,\n    messages: [{ role: 'system', content: system }, { role: 'user', content: user }],\n    response_format: { type: 'json_schema', json_schema: { name: 'saas_rebuild_evaluation', strict: true,\n      schema: { type: 'object', properties, required: Object.keys(properties), additionalProperties: false } } },\n  });\n})() }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 5,
+              "batchInterval": 1000
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "2665ce23-e766-5304-b286-ea4e21837bc1",
+      "name": "Score (OpenAI structured)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1380,
+        200
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "OpenAI Bearer"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "function parseCompletion(resp) {\n  const choice = resp && resp.choices && resp.choices[0];\n  if (!choice) throw new Error('no choices in completion');\n  if (choice.message && choice.message.refusal) throw new Error('refusal: ' + choice.message.refusal);\n  if (choice.finish_reason === 'length') throw new Error('completion truncated');\n  return JSON.parse(choice.message.content);\n}\nconst clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.round(Number(v) || lo)));\nconst esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst trunc = (s, n) => (s.length <= n ? s : s.slice(0, n - 2) + ' …');\n\n// Phase 6+7: threshold (score>=7, rewrite potential>=8), sort, top 3, Block Kit.\nconst MIN_SCORE = 7, MIN_POTENTIAL = 8, TOP_N = 3;\nconst listings = $('Traffic gate').all().map((i) => i.json);\nconst scored = [];\n$input.all().forEach((item, idx) => {\n  const l = listings[idx];\n  if (!l) return;\n  let s;\n  try { s = parseCompletion(item.json); } catch (e) { return; }\n  scored.push({\n    ...l,\n    score: clamp(s.score, 1, 10),\n    agent_rewrite_potential: clamp(s.agent_rewrite_potential, 1, 10),\n    estimated_flip_value: clamp(s.estimated_flip_value, 0, 10000000),\n    rebuild_architecture_blueprint: String(s.rebuild_architecture_blueprint || '').slice(0, 600),\n    reasoning: String(s.reasoning || '').slice(0, 500),\n  });\n});\nconst eligible = scored.filter((s) => s.score >= MIN_SCORE && s.agent_rewrite_potential >= MIN_POTENTIAL);\neligible.sort((a, b) => b.score - a.score || b.estimated_flip_value - a.estimated_flip_value);\nconst top = eligible.slice(0, TOP_N);\nconst date = $today.toFormat('yyyy-MM-dd');\n\nconst blocks = [{ type: 'header', text: { type: 'plain_text', text: `🛠️ Dead SaaS Scout: Top ${top.length} Acquisition Opportunities`, emoji: true } }];\nif (!top.length) blocks.push({ type: 'section', text: { type: 'mrkdwn', text: '_No listings cleared the score and rewrite-potential thresholds this week._' } });\ntop.forEach((l, i) => {\n  if (i > 0) blocks.push({ type: 'divider' });\n  const price = l.asking_price != null ? '$' + l.asking_price.toLocaleString('en-US') : 'not listed';\n  const text = `*${i + 1}. ${esc(l.name)}* (${esc(l.category)}) — \\`Score: ${l.score}/10\\` | *Price: ${price}*\\n` +\n    `• *Agent Potential*: \\`${l.agent_rewrite_potential}/10\\` | *Est. Flip*: \\`$${l.estimated_flip_value.toLocaleString('en-US')}\\`\\n` +\n    `• *Current Footprint*: ${l.claimed_users ? l.claimed_users.toLocaleString('en-US') + ' users' : 'users n/a'} | ${l.monthly_visits ? l.monthly_visits.toLocaleString('en-US') + ' visits/mo' : 'traffic n/a'} | Last updated: ${esc(l.last_updated_date)}\\n` +\n    `• *Stack*: ${esc((l.tech_stack || []).join(', ') || 'unknown')}\\n` +\n    `• *Rebuild Plan*: \\`${esc(l.rebuild_architecture_blueprint)}\\`\\n` +\n    `• *Rationale*: ${esc(l.reasoning)}\\n` +\n    `• *Action*: <${l.seller_contact_url}|📩 Open Deal Room / Message Founder>`;\n  blocks.push({ type: 'section', text: { type: 'mrkdwn', text: trunc(text, 3000) } });\n});\nblocks.push({ type: 'context', elements: [{ type: 'mrkdwn', text: `Funnel · gated: ${listings.length} → scored: ${scored.length} → eligible: ${eligible.length} → shortlisted: ${top.length}` }] });\n\nconst run_id = $execution.id;\nconst rows = scored.map((l) => ({ run_id, date, agent: 'saas_scout', asset_id: l.asset_id, name: l.name, category: l.category, asking_price: l.asking_price, claimed_users: l.claimed_users, monthly_visits: l.monthly_visits, tech_stack: (l.tech_stack || []).join(', '), score: l.score, agent_rewrite_potential: l.agent_rewrite_potential, estimated_flip_value: l.estimated_flip_value, shortlisted: top.includes(l), source_url: l.source_url }));\nreturn [{ json: { text: `🛠️ Dead SaaS Scout — Weekly Modernization Targets (${date})`, blocks: blocks.slice(0, 50), rows } }];\n"
+      },
+      "id": "9b5f4feb-f7b1-58ef-bc21-6c59348be673",
+      "name": "Rank + build digest",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1620,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://hooks.slack.com/services/REPLACE/WITH/YOUR-WEBHOOK",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: $json.text, blocks: $json.blocks }) }}",
+        "options": {}
+      },
+      "id": "902e0daf-1d62-50ee-a16d-8e3310c26c70",
+      "name": "Post Slack digest",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1860,
+        100
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "jsCode": "// One item per audit row for the Google Sheets append.\nreturn ($input.first().json.rows || []).map((r) => ({ json: r }));\n"
+      },
+      "id": "1e917920-2509-503c-9ba2-1277e24322d7",
+      "name": "Audit rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1860,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "REPLACE_WITH_GOOGLE_SHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "saas_scout"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "f238855c-2e24-57b2-a7c4-55c22bb120ab",
+      "name": "Append audit log (Google Sheets)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2100,
+        320
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Dead SaaS Scout (Agent 2)\nWeekly Monday 07:00 UTC: listings feed → deterministic filter → BuiltWith → Similarweb → gate → OpenAI strict JSON → score>=7 & potential>=8 → top 3 → Slack.\n\nNeither Acquire.com nor the Chrome Web Store has a public API. Point the\n\"Fetch listings feed\" node at any JSON array of listings (an Apify dataset\nitems URL works well) with fields: name, category, source_url, asking_price,\nclaimed_users, last_updated_date, domain, description, seller_contact_url.\n\nAfter import:\n1. Fetch node: replace the URL.\n2. BuiltWith node: attach HTTP Query Auth (name `KEY`).\n3. Similarweb node: attach HTTP Query Auth (name `api_key`).\n4. OpenAI node: attach HTTP Header Auth (`Authorization: Bearer sk-...`).\n5. Slack webhook URL + Google Sheet ID placeholders.\nThresholds live in the Code nodes.",
+        "height": 420,
+        "width": 520
+      },
+      "id": "114bf27c-f228-59b1-afa2-4e0636da6790",
+      "name": "README",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        -120
+      ]
+    }
+  ],
+  "connections": {
+    "Weekly Monday 07:00 UTC": {
+      "main": [
+        [
+          {
+            "node": "Fetch listings feed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch listings feed": {
+      "main": [
+        [
+          {
+            "node": "Deterministic filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deterministic filter": {
+      "main": [
+        [
+          {
+            "node": "Tech stack (BuiltWith)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tech stack (BuiltWith)": {
+      "main": [
+        [
+          {
+            "node": "Attach tech stack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach tech stack": {
+      "main": [
+        [
+          {
+            "node": "Traffic (Similarweb)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Traffic (Similarweb)": {
+      "main": [
+        [
+          {
+            "node": "Traffic gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Traffic gate": {
+      "main": [
+        [
+          {
+            "node": "Score (OpenAI structured)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score (OpenAI structured)": {
+      "main": [
+        [
+          {
+            "node": "Rank + build digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rank + build digest": {
+      "main": [
+        [
+          {
+            "node": "Post Slack digest",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Audit rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audit rows": {
+      "main": [
+        [
+          {
+            "node": "Append audit log (Google Sheets)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "UTC"
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "arbitrage-agents"
+  },
+  "versionId": "e12b46f8-cd0e-5de5-8579-fb9c82fba72d",
+  "tags": []
+}

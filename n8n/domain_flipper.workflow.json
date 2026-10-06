@@ -1,0 +1,374 @@
+{
+  "name": "Agent 1 — Domain Flipper",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 6 * * *"
+            }
+          ]
+        }
+      },
+      "id": "10adc8a2-84cf-5421-b688-52d6a2ab4544",
+      "name": "Daily 06:00 UTC",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -300,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://files.whoisfreaks.com/v3.1/domains/dropped",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "date",
+              "value": "={{ $today.minus({days: 1}).toFormat('yyyy-MM-dd') }}"
+            },
+            {
+              "name": "tlds",
+              "value": "com,ai"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth"
+      },
+      "id": "d906d222-ffaa-595e-85cd-986067726716",
+      "name": "Fetch dropped domains (WhoisFreaks)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -60,
+        200
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "",
+          "name": "WhoisFreaks apiKey"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Phase 2+3: parse the WhoisFreaks feed (JSON or CSV) and apply the\n// zero-cost deterministic filters before anything paid runs.\nconst MAX_SLD = 20;\nconst TLDS = new Set(['com', 'ai']);\nconst TRADEMARKS = ['apple','google','meta','facebook','amazon','microsoft','nike','netflix','openai','anthropic','stripe','paypal','tesla','instagram','youtube','whatsapp','twitter','tiktok','samsung','adobe','disney','walmart'];\nconst MAX_ENRICH = 400;\n\nconst raw = String($input.first().json.data ?? '').trim();\nlet records = [];\nif (raw.startsWith('[') || raw.startsWith('{')) {\n  let data = JSON.parse(raw);\n  if (!Array.isArray(data)) {\n    data = data.domains || data.data || data.results || data.dropped_domains || Object.values(data).find(Array.isArray) || [];\n  }\n  records = data.map((r) => (typeof r === 'string' ? { domain: r } : r));\n} else {\n  const lines = raw.split(/\\r?\\n/).filter((l) => l.trim());\n  const header = lines[0].split(/[,;\\t|]/).map((h) => h.trim().toLowerCase());\n  const idx = header.findIndex((h) => ['domain', 'domain_name', 'domainname', 'name'].includes(h));\n  const body = idx >= 0 ? lines.slice(1) : lines;\n  records = body.map((l) => {\n    const cells = l.split(/[,;\\t|]/);\n    return { domain: cells[idx >= 0 ? idx : 0], drop_date: cells[header.indexOf('drop_date')] };\n  });\n}\n\nconst seen = new Set();\nconst out = [];\nfor (const r of records) {\n  const domain = String(r.domain || r.domain_name || r.domainName || r.name || '').trim().toLowerCase().replace(/\\.$/, '');\n  if (!domain || !domain.includes('.') || seen.has(domain)) continue;\n  seen.add(domain);\n  const [sld, ...rest] = domain.split('.');\n  const tld = rest.join('.');\n  if (!TLDS.has(tld)) continue;\n  if (sld.startsWith('xn--') || sld.length < 2 || sld.length > MAX_SLD) continue;\n  if (sld.includes('-') || /[0-9]/.test(sld) || !/^[a-z]+$/.test(sld)) continue;\n  if (TRADEMARKS.some((t) => sld.startsWith(t))) continue;\n  out.push({ json: { domain, tld, drop_date: r.drop_date || r.dropDate || null, registrar: r.registrar || null } });\n  if (out.length >= MAX_ENRICH) break;\n}\nreturn out;\n"
+      },
+      "id": "56ec2c4b-bb09-553e-9b75-3f7557109158",
+      "name": "Parse + deterministic filter",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        180,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.dataforseo.com/v3/backlinks/summary/live",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "=[{\"target\": \"{{ $json.domain }}\", \"internal_list_limit\": 1, \"backlinks_status_type\": \"live\"}]",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 10,
+              "batchInterval": 1000
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth"
+      },
+      "id": "9aaf4963-7265-5d34-8885-d1d3221b52ef",
+      "name": "Backlink summary (DataForSEO)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        420,
+        200
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "",
+          "name": "DataForSEO"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Phase 4 gate. DataForSEO rank is 0..1000; scale to a 0..100 DR proxy.\nconst MIN_DR = 10, MIN_REFS = 5, DR_DIVISOR = 10;\nconst out = [];\nfor (const item of $input.all()) {\n  const resp = item.json;\n  const task = resp && resp.tasks && resp.tasks[0];\n  if (!task || task.status_code !== 20000) continue;\n  const result = (task.result && task.result[0]) || {};\n  const rank = Number(result.rank || 0);\n  const dr = Math.round((rank / DR_DIVISOR) * 10) / 10;\n  const referring_domains = Number(result.referring_domains || 0);\n  const total_backlinks = Number(result.backlinks || 0);\n  if (dr < MIN_DR || referring_domains < MIN_REFS) continue;\n  out.push({ json: { domain: result.target, dr, rank, referring_domains, total_backlinks, spam_score: result.backlinks_spam_score ?? null } });\n}\nreturn out;\n"
+      },
+      "id": "9b95be6d-e444-522a-b9f3-13dcea651155",
+      "name": "Authority gate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ (() => {\n  const system = 'You are a conservative, veteran domain portfolio investor and aftermarket broker. Evaluate the commercial liquidation value of the provided expired domain.\\n\\nEvaluation Criteria:\\n1. Brandability: 1-10 (Pronounceable, memorable, passes the radio test, free of awkward syllable combinations, commercial utility).\\n2. Domain Rating & Link Equity:\\n   - DR >= 30 AND Referring Domains >= 50: Score range 9-10\\n   - DR 20-29 AND Referring Domains >= 20: Score range 7-8\\n   - DR 10-19 AND Referring Domains >= 5: Score range 5-6\\n   - DR < 10: Score range 1-4\\n3. Resale Estimate: Provide a realistic wholesale buy-now flip price in USD (typically $300 to $3,500).\\n\\nReturn valid JSON adhering strictly to the required schema. No commentary outside JSON.';\n  const user = `Evaluate the following metrics:\\nDomain: ${$json.domain}\\nDomain Rating (DR): ${$json.dr}\\nReferring Domains: ${$json.referring_domains}\\nTotal Backlinks: ${$json.total_backlinks}`;\n  const properties = {\n    score: { type: 'integer', description: 'Composite investment grade score from 1 (worthless) to 10 (prime acquisition).' },\n    brandability: { type: 'integer', description: 'Brand suitability, memorability and commercial fit, 1 to 10.' },\n    suggested_price: { type: 'integer', description: 'Estimated resale liquidation value in whole USD.' },\n    reasoning: { type: 'string', description: 'Single-sentence justification synthesising backlink equity and brand phonetic appeal.' },\n  };\n  return JSON.stringify({\n    model: 'gpt-4o-mini', temperature: 0.2, max_tokens: 300,\n    messages: [{ role: 'system', content: system }, { role: 'user', content: user }],\n    response_format: { type: 'json_schema', json_schema: { name: 'domain_score_evaluation', strict: true,\n      schema: { type: 'object', properties, required: Object.keys(properties), additionalProperties: false } } },\n  });\n})() }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 5,
+              "batchInterval": 1000
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "2665ce23-e766-5304-b286-ea4e21837bc1",
+      "name": "Score (OpenAI structured)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        200
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "OpenAI Bearer"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "function parseCompletion(resp) {\n  const choice = resp && resp.choices && resp.choices[0];\n  if (!choice) throw new Error('no choices in completion');\n  if (choice.message && choice.message.refusal) throw new Error('refusal: ' + choice.message.refusal);\n  if (choice.finish_reason === 'length') throw new Error('completion truncated');\n  return JSON.parse(choice.message.content);\n}\nconst clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.round(Number(v) || lo)));\nconst esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst trunc = (s, n) => (s.length <= n ? s : s.slice(0, n - 2) + ' …');\n\n// Phase 6+7: merge scores with metrics (same order as the gate output),\n// sort score DESC then suggested_price DESC, take the top 5, build Block Kit.\nconst TOP_N = 5;\nconst metrics = $('Authority gate').all().map((i) => i.json);\nconst scored = [];\n$input.all().forEach((item, idx) => {\n  const m = metrics[idx];\n  if (!m) return;\n  let s;\n  try { s = parseCompletion(item.json); } catch (e) { return; }\n  scored.push({\n    ...m,\n    score: clamp(s.score, 1, 10),\n    brandability: clamp(s.brandability, 1, 10),\n    suggested_price: clamp(s.suggested_price, 0, 1000000),\n    reasoning: String(s.reasoning || '').slice(0, 500),\n  });\n});\nscored.sort((a, b) => b.score - a.score || b.suggested_price - a.suggested_price);\nconst top = scored.slice(0, TOP_N);\nconst date = $today.minus({ days: 1 }).toFormat('yyyy-MM-dd');\n\nconst blocks = [\n  { type: 'header', text: { type: 'plain_text', text: `🔍 High-Yield Dropped Domains (${date})`, emoji: true } },\n  { type: 'divider' },\n];\nif (!top.length) blocks.push({ type: 'section', text: { type: 'mrkdwn', text: '_No domains cleared the authority gate today._' } });\ntop.forEach((d, i) => {\n  const enc = encodeURIComponent(d.domain);\n  const text = `*${i + 1}. ${esc(d.domain)}* — \\`Score: ${d.score}/10\\` — *Est. Flip: $${d.suggested_price.toLocaleString('en-US')}*\\n` +\n    `• Metrics: *DR ${d.dr}* | *${d.referring_domains} Ref Domains* | *${d.total_backlinks} Backlinks* | Brandability: *${d.brandability}/10*\\n` +\n    `• Rationale: _${esc(d.reasoning)}_\\n` +\n    `• Checkout: <https://www.godaddy.com/domainsearch/find?domainToCheck=${enc}|🛒 Register on GoDaddy> | <https://www.namecheap.com/domains/registration/results/?domain=${enc}|🛒 Register on Namecheap>`;\n  blocks.push({ type: 'section', text: { type: 'mrkdwn', text: trunc(text, 3000) } });\n});\nblocks.push({ type: 'context', elements: [{ type: 'mrkdwn', text: `Funnel · gated: ${metrics.length} → scored: ${scored.length} → shortlisted: ${top.length}` }] });\n\nconst run_id = $execution.id;\nconst rows = scored.map((d) => ({ run_id, date, agent: 'domain_flipper', domain: d.domain, dr: d.dr, referring_domains: d.referring_domains, total_backlinks: d.total_backlinks, score: d.score, brandability: d.brandability, suggested_price: d.suggested_price, shortlisted: top.includes(d), reasoning: d.reasoning }));\nreturn [{ json: { text: `🔍 Domain Flips Daily Shortlist — ${date}`, blocks: blocks.slice(0, 50), rows } }];\n"
+      },
+      "id": "9b5f4feb-f7b1-58ef-bc21-6c59348be673",
+      "name": "Rank + build digest",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1140,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://hooks.slack.com/services/REPLACE/WITH/YOUR-WEBHOOK",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: $json.text, blocks: $json.blocks }) }}",
+        "options": {}
+      },
+      "id": "902e0daf-1d62-50ee-a16d-8e3310c26c70",
+      "name": "Post Slack digest",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1380,
+        100
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "jsCode": "// One item per audit row for the Google Sheets append.\nreturn ($input.first().json.rows || []).map((r) => ({ json: r }));\n"
+      },
+      "id": "1e917920-2509-503c-9ba2-1277e24322d7",
+      "name": "Audit rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1380,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "REPLACE_WITH_GOOGLE_SHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "domain_flipper"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "f238855c-2e24-57b2-a7c4-55c22bb120ab",
+      "name": "Append audit log (Google Sheets)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1620,
+        320
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Domain Flipper (Agent 1)\nDaily 06:00 UTC: WhoisFreaks dropped feed → deterministic filter → DataForSEO backlinks → gate (DR>=10, refs>=5) → OpenAI strict JSON → top 5 → Slack.\n\nAfter import:\n1. Fetch node: attach an HTTP Query Auth credential (name `apiKey`, value = WhoisFreaks key).\n2. DataForSEO node: attach HTTP Basic Auth (login/password).\n3. OpenAI node: attach HTTP Header Auth (name `Authorization`, value `Bearer sk-...`).\n4. Slack node: replace the webhook URL.\n5. Sheets node: set the spreadsheet ID + sheet tab, or delete the audit branch.\nThresholds live in the Code nodes (MAX_SLD, TLDS, TRADEMARKS, MIN_DR, MIN_REFS, TOP_N).\nNote: DataForSEO `rank` is 0..1000; it is divided by 10 to approximate a 0..100 DR.",
+        "height": 420,
+        "width": 520
+      },
+      "id": "114bf27c-f228-59b1-afa2-4e0636da6790",
+      "name": "README",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        -120
+      ]
+    }
+  ],
+  "connections": {
+    "Daily 06:00 UTC": {
+      "main": [
+        [
+          {
+            "node": "Fetch dropped domains (WhoisFreaks)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch dropped domains (WhoisFreaks)": {
+      "main": [
+        [
+          {
+            "node": "Parse + deterministic filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse + deterministic filter": {
+      "main": [
+        [
+          {
+            "node": "Backlink summary (DataForSEO)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Backlink summary (DataForSEO)": {
+      "main": [
+        [
+          {
+            "node": "Authority gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Authority gate": {
+      "main": [
+        [
+          {
+            "node": "Score (OpenAI structured)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score (OpenAI structured)": {
+      "main": [
+        [
+          {
+            "node": "Rank + build digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rank + build digest": {
+      "main": [
+        [
+          {
+            "node": "Post Slack digest",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Audit rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audit rows": {
+      "main": [
+        [
+          {
+            "node": "Append audit log (Google Sheets)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "UTC"
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "arbitrage-agents"
+  },
+  "versionId": "ebb740bb-7465-5d35-9b10-da4b5e67418e",
+  "tags": []
+}

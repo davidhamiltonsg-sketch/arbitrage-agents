@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: python3 -m compileall -q agents cli.py n8n tests
+      - run: python3 -m unittest discover -s tests -t . -v
+      - run: python3 cli.py domain-flipper --dry-run --quiet --no-deliver > /dev/null
+      - run: python3 cli.py saas-scout --dry-run --quiet --no-deliver > /dev/null
