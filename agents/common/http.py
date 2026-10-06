@@ -114,13 +114,16 @@ def request(
     raise last_error
 
 
+MAX_RETRY_DELAY = 15.0
+
+
 def _retry_delay(retry_after: str | None, backoff: float, attempt: int) -> float:
     if retry_after:
         try:
-            return max(0.0, float(retry_after))
+            return min(MAX_RETRY_DELAY, max(0.0, float(retry_after)))
         except ValueError:
             pass
-    return backoff * (2 ** attempt)
+    return min(MAX_RETRY_DELAY, backoff * (2 ** attempt))
 
 
 def get_json(url: str, **kwargs: Any) -> Any:

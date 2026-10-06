@@ -207,12 +207,29 @@ def run(
                 audit.record("llm_skipped", candidate["domain"], reason="below heuristic pre-rank cut")
         log(f"[score] {len(enriched)} candidates; sending the top {len(to_score)} by heuristic pre-rank to the model (DOMAIN_MAX_LLM_SCORE)")
     scored: list[dict[str, Any]] = []
+    consecutive_failures = 0
     for candidate in to_score:
         try:
             result = scorer(candidate)
+            consecutive_failures = 0
         except Exception as exc:
             audit.record("score_error", candidate["domain"], error=str(exc))
             log(f"[score] {candidate['domain']}: {exc}")
+            consecutive_failures += 1
+            if scorer is not scoring.heuristic_score and consecutive_failures >= LLM_CIRCUIT_BREAKER:
+                log(f"::warning title=Model scoring disabled::{LLM_CIRCUIT_BREAKER} consecutive OpenAI failures; using the heuristic scorer for the rest of this run. Last error: {exc}")
+                audit.record("llm_circuit_open", "-", error=str(exc))
+                scorer = scoring.heuristic_score
+                to_score = enriched  # heuristic is free: score everything after all
+                scored = [{**c, **scoring.heuristic_score(c)} for c in enriched[: enriched.index(candidate) + 1]]
+                for item in scored:
+                    audit.record("scored", item["domain"], score=item["score"], brandability=item["brandability"], suggested_price=item["suggested_price"], reasoning=item["reasoning"])
+                remaining = enriched[enriched.index(candidate) + 1:]
+                for c in remaining:
+                    item = {**c, **scoring.heuristic_score(c)}
+                    audit.record("scored", c["domain"], score=item["score"], brandability=item["brandability"], suggested_price=item["suggested_price"], reasoning=item["reasoning"])
+                    scored.append(item)
+                break
             continue
         item = {**candidate, **result}
         audit.record("scored", candidate["domain"], **result)
@@ -237,6 +254,8 @@ def run(
     cache.close()
     return RunResult(audit.run_id, shortlist, funnel, text, blocks)
 
+
+LLM_CIRCUIT_BREAKER = 3
 
 NO_AUTHORITY = {"rank": None, "dr": None, "referring_domains": None, "total_backlinks": None, "spam_score": None, "first_seen": None, "authority_source": "none"}
 

@@ -82,6 +82,17 @@ class HttpTests(unittest.TestCase):
         self.assertEqual(calls["n"], 3)
         self.assertEqual(sleeps, [0.0, 0.0])
 
+    def test_retry_delay_is_capped(self):
+        self.assertEqual(http._retry_delay("3600", 1.0, 0), http.MAX_RETRY_DELAY)
+        self.assertEqual(http._retry_delay(None, 1.0, 10), http.MAX_RETRY_DELAY)
+        self.assertEqual(http._retry_delay("2", 1.0, 0), 2.0)
+
+    def test_openai_error_description(self):
+        err = http.HttpError("HTTP 429", status=429, body=b'{"error": {"message": "You exceeded your current quota"}}')
+        text = llm.describe_openai_error(err)
+        self.assertIn("429", text)
+        self.assertIn("exceeded your current quota", text)
+
     def test_non_retryable_status_raises_immediately(self):
         import urllib.error
 

@@ -333,6 +333,22 @@ class PipelineTests(NoNetworkTestCase):
         self.assertEqual(set(llm_calls), {"lumen.com", "quill.ai"})  # short, pronounceable names pre-rank highest
         self.assertEqual(result.funnel["scored"], 2)
 
+    def test_llm_circuit_breaker_falls_back_to_heuristic(self):
+        conf = pipeline.DomainFlipperConfig(openai_api_key="sk", cache_path=":memory:", audit_path=None, max_llm_score=50, top_n=3)
+        feed = [sources.normalise_record({"domain": f"name{chr(97 + i)}.com"}) for i in range(8)]
+        calls = []
+
+        def failing(record, llm):
+            calls.append(record["domain"])
+            raise RuntimeError("OpenAI rate limit or no credit (429)")
+
+        with mock.patch.object(pipeline.sources, "fetch_free_dropped_domains", return_value=feed), \
+             mock.patch.object(pipeline.scoring, "score_domain", failing):
+            result = pipeline.run(conf, sender=StdoutSender(io.StringIO()), log=lambda *a, **k: None)
+        self.assertEqual(len(calls), 3)  # breaker opens after three consecutive failures
+        self.assertEqual(result.funnel["scored"], 8)  # everything still scored, heuristically
+        self.assertEqual(result.funnel["shortlisted"], 3)
+
     def test_enrich_cap_applies_only_to_metered_sources(self):
         feed = [sources.normalise_record({"domain": f"name{chr(97 + i)}.com"}) for i in range(6)]
         with mock.patch.object(pipeline.sources, "fetch_free_dropped_domains", return_value=feed):

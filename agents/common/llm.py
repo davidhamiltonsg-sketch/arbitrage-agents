@@ -84,8 +84,25 @@ class LLMClient:
             },
         }
         headers = {"Authorization": f"Bearer {self.api_key}"}
-        payload = http.post_json(f"{self.base_url.rstrip('/')}/chat/completions", body, headers=headers, timeout=self.timeout)
+        try:
+            payload = http.post_json(f"{self.base_url.rstrip('/')}/chat/completions", body, headers=headers, timeout=self.timeout, retries=1)
+        except http.HttpError as exc:
+            raise LLMError(describe_openai_error(exc)) from exc
         return parse_structured_response(payload)
+
+
+def describe_openai_error(exc: http.HttpError) -> str:
+    detail = ""
+    try:
+        detail = json.loads(exc.body.decode("utf-8")).get("error", {}).get("message", "")
+    except Exception:
+        detail = exc.body.decode("utf-8", errors="replace")[:200]
+    hints = {
+        401: "OpenAI rejected the API key (401); check OPENAI_API_KEY",
+        429: "OpenAI rate limit or no credit (429); add billing credit or lower DOMAIN_MAX_LLM_SCORE",
+        402: "OpenAI billing problem (402)",
+    }
+    return f"{hints.get(exc.status or 0, f'OpenAI request failed (HTTP {exc.status})')}: {detail}"
 
 
 def parse_structured_response(payload: dict[str, Any]) -> dict[str, Any]:
