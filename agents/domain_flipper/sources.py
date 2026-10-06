@@ -38,12 +38,21 @@ def fetch_dropped_domains(
     try:
         resp = http.request("GET", WHOISFREAKS_DROPPED_URL, params=params, timeout=timeout)
     except http.HttpError as exc:
-        raise SourceError(describe_whoisfreaks_error(exc)) from exc
+        raise SourceError(describe_whoisfreaks_error(exc), status=exc.status) from exc
     return parse_dropped_payload(resp.body)
 
 
 class SourceError(Exception):
     """A feed could not be fetched; the message is written for the operator."""
+
+    def __init__(self, message: str, *, status: int | None = None):
+        super().__init__(message)
+        self.status = status
+
+    @property
+    def is_plan_problem(self) -> bool:
+        """True when the key or plan is the problem (not a transient outage)."""
+        return self.status in (401, 402, 403)
 
 
 def describe_whoisfreaks_error(exc: http.HttpError) -> str:
@@ -77,7 +86,7 @@ def fetch_free_dropped_domains(*, date: str | None = None, timeout: float = 120.
         if exc.status == 404 and date:
             resp = http.request("GET", FREE_FEED_URL.format(name=free_feed_filename(None)), timeout=timeout)
         else:
-            raise SourceError(f"Free dropped-domains feed unavailable: {exc}") from exc
+            raise SourceError(f"Free dropped-domains feed unavailable: {exc}", status=exc.status) from exc
     records = parse_dropped_payload(resp.body)
     for record in records:
         record.setdefault("drop_date", date)

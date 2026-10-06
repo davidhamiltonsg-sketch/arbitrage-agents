@@ -296,6 +296,43 @@ class PipelineTests(NoNetworkTestCase):
         self.assertTrue(all(i["dr"] is None for i in result.shortlist))
         self.assertIn("no authority data", sender.sent[0]["blocks"][2]["text"]["text"])
 
+    def test_auto_falls_back_to_free_feed_on_plan_error(self):
+        conf = pipeline.DomainFlipperConfig(whoisfreaks_api_key="bad", cache_path=":memory:", audit_path=None)
+        feed = [sources.normalise_record({"domain": "fallback.com"})]
+        with mock.patch.object(pipeline.sources, "fetch_dropped_domains", side_effect=sources.SourceError("401 no package", status=401)), \
+             mock.patch.object(pipeline.sources, "fetch_free_dropped_domains", return_value=feed):
+            result = pipeline.run(conf, sender=StdoutSender(io.StringIO()), log=lambda *a, **k: None)
+        self.assertEqual(result.funnel["fetched"], 1)
+        self.assertEqual(result.shortlist[0]["domain"], "fallback.com")
+
+    def test_explicit_paid_source_does_not_fall_back(self):
+        conf = pipeline.DomainFlipperConfig(domain_source="whoisfreaks", whoisfreaks_api_key="bad", cache_path=":memory:", audit_path=None)
+        with mock.patch.object(pipeline.sources, "fetch_dropped_domains", side_effect=sources.SourceError("401", status=401)):
+            with self.assertRaises(SystemExit):
+                pipeline.run(conf, sender=StdoutSender(io.StringIO()), log=lambda *a, **k: None)
+
+    def test_auto_does_not_fall_back_on_outage(self):
+        conf = pipeline.DomainFlipperConfig(whoisfreaks_api_key="good", cache_path=":memory:", audit_path=None)
+        with mock.patch.object(pipeline.sources, "fetch_dropped_domains", side_effect=sources.SourceError("503", status=503)):
+            with self.assertRaises(SystemExit):
+                pipeline.run(conf, sender=StdoutSender(io.StringIO()), log=lambda *a, **k: None)
+
+    def test_llm_scoring_is_capped_with_heuristic_preranking(self):
+        conf = pipeline.DomainFlipperConfig(openai_api_key="sk", cache_path=":memory:", audit_path=None, max_llm_score=2, top_n=5)
+        feed = [sources.normalise_record({"domain": d}) for d in ("aaaaaaaaaaaaaaaaaaa.com", "lumen.com", "bbbbbbbbbbbbbbbbbbb.com", "quill.ai")]
+        llm_calls = []
+
+        def fake_score(record, llm):
+            llm_calls.append(record["domain"])
+            return {"score": 8, "brandability": 8, "suggested_price": 1000, "reasoning": "llm"}
+
+        with mock.patch.object(pipeline.sources, "fetch_free_dropped_domains", return_value=feed), \
+             mock.patch.object(pipeline.scoring, "score_domain", fake_score):
+            result = pipeline.run(conf, sender=StdoutSender(io.StringIO()), log=lambda *a, **k: None)
+        self.assertEqual(len(llm_calls), 2)
+        self.assertEqual(set(llm_calls), {"lumen.com", "quill.ai"})  # short, pronounceable names pre-rank highest
+        self.assertEqual(result.funnel["scored"], 2)
+
     def test_enrich_cap_applies_only_to_metered_sources(self):
         feed = [sources.normalise_record({"domain": f"name{chr(97 + i)}.com"}) for i in range(6)]
         with mock.patch.object(pipeline.sources, "fetch_free_dropped_domains", return_value=feed):

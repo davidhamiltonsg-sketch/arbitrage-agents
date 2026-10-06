@@ -33,6 +33,7 @@ class DomainFlipperConfig:
     dr_divisor: float = 10.0
     gate: enrich.AuthorityGate = field(default_factory=enrich.AuthorityGate)
     max_enrich: int = 400
+    max_llm_score: int = 100
     openai_api_key: str | None = None
     openai_model: str = "gpt-4o-mini"
     openai_base_url: str = "https://api.openai.com/v1"
@@ -68,6 +69,7 @@ class DomainFlipperConfig:
             dr_divisor=cfg.env_float("DR_SCALE_DIVISOR", 10.0),
             gate=enrich.AuthorityGate(min_dr=cfg.env_float("DOMAIN_MIN_DR", 10), min_referring_domains=cfg.env_int("DOMAIN_MIN_REFERRING_DOMAINS", 5)),
             max_enrich=cfg.env_int("DOMAIN_MAX_ENRICH", 400),
+            max_llm_score=cfg.env_int("DOMAIN_MAX_LLM_SCORE", 100),
             openai_api_key=cfg.env("OPENAI_API_KEY"),
             openai_model=cfg.env("OPENAI_MODEL_DOMAIN", cfg.env("OPENAI_MODEL", "gpt-4o-mini")) or "gpt-4o-mini",
             openai_base_url=cfg.env("OPENAI_BASE_URL", "https://api.openai.com/v1") or "https://api.openai.com/v1",
@@ -141,12 +143,19 @@ def run(
     else:
         source = conf.resolved_domain_source()
         try:
+            records = None
             if source == "whoisfreaks":
                 if not conf.whoisfreaks_api_key:
                     raise SystemExit("DOMAIN_SOURCE=whoisfreaks needs WHOISFREAKS_API_KEY (or use DOMAIN_SOURCE=whoisfreaks-free)")
-                records = sources.fetch_dropped_domains(conf.whoisfreaks_api_key, date=drop_date, tlds=conf.tlds)
-                log(f"[fetch] WhoisFreaks returned {len(records)} dropped domains for {drop_date}")
-            else:
+                try:
+                    records = sources.fetch_dropped_domains(conf.whoisfreaks_api_key, date=drop_date, tlds=conf.tlds)
+                    log(f"[fetch] WhoisFreaks returned {len(records)} dropped domains for {drop_date}")
+                except sources.SourceError as exc:
+                    if conf.domain_source != "auto" or not exc.is_plan_problem:
+                        raise
+                    log(f"[fetch] ::warning::paid WhoisFreaks feed rejected the key; falling back to the free feed. {exc}")
+                    audit.record("source_fallback", "whoisfreaks", reason=str(exc))
+            if records is None:
                 records = sources.fetch_free_dropped_domains(date=explicit_date)
                 log(f"[fetch] free WhoisFreaks GitHub feed returned {len(records)} dropped domains ({'file for ' + explicit_date if explicit_date else 'latest file'})")
         except sources.SourceError as exc:
@@ -186,10 +195,19 @@ def run(
     else:
         log(f"[enrich] {len(enriched)} pass the authority gate via {authority} (DR >= {conf.gate.min_dr:g}, refs >= {conf.gate.min_referring_domains} where available)")
 
-    # Phase 5: AI score
+    # Phase 5: AI score (LLM calls are capped; the heuristic pre-ranks the field first)
     scorer = _scorer(conf, dry_run, log)
+    to_score = enriched
+    if scorer is not scoring.heuristic_score and len(enriched) > conf.max_llm_score:
+        pre = sorted(enriched, key=lambda r: (-scoring.heuristic_score(r)["score"], -scoring.heuristic_score(r)["brandability"]))
+        to_score = pre[: conf.max_llm_score]
+        skipped = {id(r) for r in enriched} - {id(r) for r in to_score}
+        for candidate in enriched:
+            if id(candidate) in skipped:
+                audit.record("llm_skipped", candidate["domain"], reason="below heuristic pre-rank cut")
+        log(f"[score] {len(enriched)} candidates; sending the top {len(to_score)} by heuristic pre-rank to the model (DOMAIN_MAX_LLM_SCORE)")
     scored: list[dict[str, Any]] = []
-    for candidate in enriched:
+    for candidate in to_score:
         try:
             result = scorer(candidate)
         except Exception as exc:
