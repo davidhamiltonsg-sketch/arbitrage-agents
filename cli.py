@@ -14,6 +14,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from agents.common.markdown import blocks_to_markdown  # noqa: E402
 from agents.domain_flipper import pipeline as domain_pipeline  # noqa: E402
 from agents.saas_scout import pipeline as saas_pipeline  # noqa: E402
 
@@ -27,6 +28,7 @@ def build_parser() -> argparse.ArgumentParser:
     common.add_argument("--top", type=int, help="override the shortlist size")
     common.add_argument("--no-deliver", action="store_true", help="print the Slack payload instead of posting it")
     common.add_argument("--quiet", action="store_true", help="suppress progress logging")
+    common.add_argument("--markdown-out", metavar="PATH", help="also write the digest as GitHub-flavoured Markdown to PATH")
 
     flipper = sub.add_parser("domain-flipper", parents=[common], help="Agent 1: dropped-domain shortlist")
     flipper.add_argument("--date", help="drop date to fetch (YYYY-MM-DD); defaults to yesterday UTC")
@@ -48,6 +50,9 @@ def main(argv: list[str] | None = None) -> int:
         conf = saas_pipeline.SaasScoutConfig.from_env()
         result = saas_pipeline.run(conf, dry_run=args.dry_run, top=args.top, deliver=not args.no_deliver, listings_path=args.listings, log=log)
 
+    if args.markdown_out:
+        Path(args.markdown_out).write_text(blocks_to_markdown(result.digest_text, result.digest_blocks), encoding="utf-8")
+        log(f"[deliver] markdown digest written to {args.markdown_out}")
     log(f"[done] run {result.run_id}: " + ", ".join(f"{k}={v}" for k, v in result.funnel.items()))
     return 0
 

@@ -61,16 +61,19 @@ servers on the cookbook schedule (06:00 UTC daily for the Domain Flipper,
 from the GitHub mobile app or a phone browser.
 
 1. **Add keys** at *Settings → Secrets and variables → Actions → New repository
-   secret*: `WHOISFREAKS_API_KEY`, `DATAFORSEO_LOGIN`, `DATAFORSEO_PASSWORD`,
-   `OPENAI_API_KEY`, `SLACK_WEBHOOK_URL`. For the SaaS Scout also
+   secret*: `WHOISFREAKS_API_KEY`, `DATAFORSEO_LOGIN`, `DATAFORSEO_PASSWORD`
+   and, for AI scoring instead of the built-in heuristic, `OPENAI_API_KEY`. For the SaaS Scout also
    `SAAS_LISTINGS_URL` (a URL that returns the listings JSON, such as an Apify
    dataset items URL) and optionally `BUILTWITH_API_KEY`, `SIMILARWEB_API_KEY`.
    Thresholds such as `DOMAIN_TOP_N` go under *Variables* instead of secrets.
 2. **Trigger a run** at *Actions → Run arbitrage agents → Run workflow*. Leave
    *Dry run* ticked the first time: it needs no keys and prints the digest in
    the job log so you can see the output shape. Untick it for a live run.
-3. **Read the result** in Slack (live runs) or in the job log under the
-   *Run* step. Audit logs are attached to every run as an artifact.
+3. **Read the result** on the run's *Summary* page (every run) and as a
+   GitHub issue labelled `arbitrage-digest` (live runs, or any run with
+   *Open issue* ticked), which the GitHub app notifies you about. Slack is
+   optional on top: set `SLACK_WEBHOOK_URL` and live runs post there too.
+   Audit logs are attached to every run as an artifact.
 
 Missing keys degrade rather than fail: no OpenAI key uses the heuristic
 scorer, no enrichment keys skip that step, no listings URL makes the SaaS

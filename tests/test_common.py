@@ -11,7 +11,7 @@ from unittest import mock
 from tests.helpers import NoNetworkTestCase
 
 from agents.common import cache as cache_mod
-from agents.common import config, http, llm, ranking, slack
+from agents.common import config, http, llm, markdown, ranking, slack
 from agents.common.audit import AuditLog
 
 
@@ -175,6 +175,24 @@ class SlackTests(unittest.TestCase):
         with mock.patch.object(slack.http, "request", return_value=http.Response(200, {}, b"invalid_payload", "u")):
             with self.assertRaises(http.HttpError):
                 slack.SlackClient(webhook_url="https://hooks.slack.test/x").send(text="t", blocks=[])
+
+
+class MarkdownTests(unittest.TestCase):
+    def test_mrkdwn_conversion(self):
+        src = "*1. a.com* — `Score: 9/10` — *Est. Flip: $3,340*\n• Rationale: _solid &lt;x&gt; &amp; y_\n• Checkout: <https://g.test/?d=a.com|🛒 GoDaddy> | <https://n.test/|Namecheap>"
+        out = markdown.mrkdwn_to_markdown(src)
+        self.assertIn("**1. a.com**", out)
+        self.assertIn("**Est. Flip: $3,340**", out)
+        self.assertIn("- Rationale: *solid <x> & y*", out)
+        self.assertIn("[🛒 GoDaddy](https://g.test/?d=a.com)", out)
+        self.assertIn("[Namecheap](https://n.test/)", out)
+        self.assertIn("`Score: 9/10`", out)
+
+    def test_blocks_to_markdown(self):
+        blocks = [slack.header("Title"), slack.divider(), slack.section("*x*\n• one"), slack.context("Funnel · a: 1")]
+        out = markdown.blocks_to_markdown("fallback", blocks)
+        self.assertTrue(out.startswith("## Title\n\n---\n\n**x**\n- one\n\n_Funnel · a: 1_"))
+        self.assertTrue(markdown.blocks_to_markdown("fb", [slack.section("hi")]).startswith("## fb\n\nhi"))
 
 
 class RankingTests(unittest.TestCase):
