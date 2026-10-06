@@ -153,7 +153,7 @@ def run(
                 except sources.SourceError as exc:
                     if conf.domain_source != "auto" or not exc.is_plan_problem:
                         raise
-                    log(f"[fetch] ::warning::paid WhoisFreaks feed rejected the key; falling back to the free feed. {exc}")
+                    log(f"::warning title=Paid feed unavailable::WhoisFreaks rejected the key; using the free public feed instead. {exc}")
                     audit.record("source_fallback", "whoisfreaks", reason=str(exc))
             if records is None:
                 records = sources.fetch_free_dropped_domains(date=explicit_date)
