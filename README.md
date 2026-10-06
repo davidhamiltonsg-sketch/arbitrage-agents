@@ -1,9 +1,9 @@
 # Arbitrage Agents
 
 Standalone, dependency-free implementations of the two "flipper" agents from
-the Passive Arbitrage Agent Cookbook. This folder is independent of the
-Next.js field app that shares the repository: nothing here is imported by it,
-and nothing in it is touched by the app's lint, typecheck or test commands.
+the Passive Arbitrage Agent Cookbook: a daily dropped-domain shortlist and a
+weekly neglected-SaaS shortlist, each delivered to your phone as a GitHub
+issue, with Slack as an optional extra.
 
 | Agent | Cadence | Pipeline | Shortlist |
 | --- | --- | --- | --- |
@@ -19,6 +19,7 @@ thresholds and Slack layout.
 Python 3.10 or newer, no packages to install.
 
 ```bash
+git clone https://github.com/davidhamiltonsg-sketch/arbitrage-agents.git
 cd arbitrage-agents
 cp .env.example .env            # fill in keys later; dry runs need none
 
@@ -55,7 +56,7 @@ Schedule with cron:
 
 ### Run it from GitHub (no laptop needed)
 
-`.github/workflows/arbitrage-agents-run.yml` runs the agents on GitHub's
+`.github/workflows/run.yml` runs the agents on GitHub's
 servers on the cookbook schedule (06:00 UTC daily for the Domain Flipper,
 07:00 UTC Mondays for the SaaS Scout) and on demand. Everything can be done
 from the GitHub mobile app or a phone browser.

@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from typing import Any, Mapping
 
 RETRY_STATUSES = frozenset({408, 429, 500, 502, 503, 504})
-DEFAULT_USER_AGENT = "arbitrage-agents/1.0 (+https://github.com/davidhamiltonsg-sketch/alliance-field-app)"
+DEFAULT_USER_AGENT = "arbitrage-agents/1.0 (+https://github.com/davidhamiltonsg-sketch/arbitrage-agents)"
 
 
 class HttpError(Exception):
