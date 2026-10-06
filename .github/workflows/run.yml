@@ -132,6 +132,14 @@ jobs:
         if: contains(steps.plan.outputs.agents, 'saas-scout') && env.SAAS_LISTINGS_URL != '' && !contains(steps.plan.outputs.flags, '--dry-run')
         run: curl -fsSL "$SAAS_LISTINGS_URL" -o listings.json
 
+      - name: Ensure labels exist
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create "arbitrage-digest" --repo "${{ github.repository }}" --color 1D76DB --description "Agent shortlists" --force >/dev/null 2>&1 || true
+          gh label create "run-request" --repo "${{ github.repository }}" --color 0E8A16 --description "Start a live run (used by the dashboard)" --force >/dev/null 2>&1 || true
+
       - name: Load dashboard settings
         shell: bash
         run: |

@@ -101,6 +101,23 @@ Missing keys degrade rather than fail: no feed key uses the free public
 sample feed, no authority key skips the gate, no OpenAI key uses the heuristic
 scorer, no listings URL makes the SaaS Scout fall back to a dry run.
 
+### Phone dashboard
+
+A private Claude artifact, the **Arbitrage Console**, reads this repository
+through your claude.ai GitHub connector and needs no server of its own:
+
+- the latest shortlist from `data/domain-flipper/latest.json` with authority,
+  Wayback history (first and last archived year, monthly snapshots, links to
+  the timeline and the latest copy) and the trademark screen with prefilled
+  USPTO, WIPO and EUIPO searches;
+- **Bought** / **Pass** decisions saved to `data/decisions.json`;
+- **Run now**, which opens an issue labelled `run-request`; the runner picks it
+  up, replies with the digest and closes it;
+- thresholds edited in `settings.env`, loaded before every run.
+
+The runner writes `data/<agent>/latest.json` and a dated copy under
+`data/<agent>/history/` after each live run.
+
 ### n8n
 
 Import `n8n/domain_flipper.workflow.json` and `n8n/saas_scout.workflow.json`
