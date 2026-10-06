@@ -33,7 +33,7 @@ FAMOUS_MARKS: tuple[str, ...] = (
 )
 
 
-def wayback_summary(domain: str, *, timeout: float = 40.0, fetch=None) -> dict[str, Any]:
+def wayback_summary(domain: str, *, timeout: float = 20.0, fetch=None) -> dict[str, Any]:
     """Summarise a domain's Wayback Machine history via the public CDX API (no key)."""
     params = {
         "url": domain,
@@ -57,7 +57,7 @@ def wayback_summary(domain: str, *, timeout: float = 40.0, fetch=None) -> dict[s
         if fetch is not None:
             payload = fetch(domain)
         else:
-            payload = http.get_json(CDX_URL, params=params, timeout=timeout, retries=1)
+            payload = http.get_json(CDX_URL, params=params, timeout=timeout, retries=0)
     except Exception as exc:  # never sink a run over archive availability
         return {**base, "status": "error", "error": str(exc)[:200]}
     return {**base, **summarise_cdx(domain, payload)}
