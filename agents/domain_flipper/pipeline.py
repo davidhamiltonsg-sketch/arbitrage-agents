@@ -32,7 +32,8 @@ class DomainFlipperConfig:
     dataforseo_auth: str | None = None
     dr_divisor: float = 10.0
     gate: enrich.AuthorityGate = field(default_factory=enrich.AuthorityGate)
-    max_enrich: int = 400
+    max_enrich: int = 400           # paid lookups (DataForSEO) per run
+    max_openpagerank: int = 5000    # free lookups (Open PageRank, 100 per call) per run
     max_llm_score: int = 100
     openai_api_key: str | None = None
     openai_model: str = "gpt-4o-mini"
@@ -69,6 +70,7 @@ class DomainFlipperConfig:
             dr_divisor=cfg.env_float("DR_SCALE_DIVISOR", 10.0),
             gate=enrich.AuthorityGate(min_dr=cfg.env_float("DOMAIN_MIN_DR", 10), min_referring_domains=cfg.env_int("DOMAIN_MIN_REFERRING_DOMAINS", 5)),
             max_enrich=cfg.env_int("DOMAIN_MAX_ENRICH", 400),
+            max_openpagerank=cfg.env_int("DOMAIN_MAX_OPENPAGERANK", 5000),
             max_llm_score=cfg.env_int("DOMAIN_MAX_LLM_SCORE", 100),
             openai_api_key=cfg.env("OPENAI_API_KEY"),
             openai_model=cfg.env("OPENAI_MODEL_DOMAIN", cfg.env("OPENAI_MODEL", "gpt-4o-mini")) or "gpt-4o-mini",
@@ -171,9 +173,11 @@ def run(
     funnel["after_filters"] = len(kept)
     log(f"[filter] {len(kept)} candidates remain ({len(rejected)} rejected)")
     authority = "fixture" if dry_run else conf.resolved_authority_source()
-    if authority in ("dataforseo", "openpagerank") and len(kept) > conf.max_enrich:
-        log(f"[filter] capping {authority} lookups at {conf.max_enrich} candidates (DOMAIN_MAX_ENRICH)")
-        kept = kept[: conf.max_enrich]
+    cap = {"dataforseo": conf.max_enrich, "openpagerank": conf.max_openpagerank}.get(authority)
+    if cap is not None and len(kept) > cap:
+        # Spend lookups on the most brandable names first, not on feed order.
+        kept = sorted(kept, key=lambda r: -scoring.heuristic_score(r)["brandability"])[:cap]
+        log(f"[filter] capping {authority} lookups at {cap} candidates, best names first")
 
     # Phase 4: enrich + hard gate
     enriched: list[dict[str, Any]] = []
@@ -189,10 +193,30 @@ def run(
             enriched.append(candidate)
         else:
             audit.record("gated_out", record["domain"], dr=metrics["dr"], referring_domains=metrics["referring_domains"])
+    notes: list[str] = []
+    if authority not in ("none", "fixture") and not enriched and metrics_by_domain:
+        # Nothing cleared the gate. Relax in two steps so the digest is never empty for
+        # a threshold reason: any measurable authority first, then name quality alone.
+        with_signal = [
+            {**r, **metrics_by_domain[r["domain"]]}
+            for r in kept
+            if r["domain"] in metrics_by_domain and float(metrics_by_domain[r["domain"]].get("dr") or 0) > 0
+        ]
+        if with_signal:
+            with_signal.sort(key=lambda r: -float(r.get("dr") or 0))
+            enriched = with_signal
+            notes.append(f"Gate relaxed: nothing reached authority {conf.gate.min_dr:g}; showing the {len(enriched)} candidates with any measurable authority.")
+        else:
+            enriched = [{**r, **metrics_by_domain[r["domain"]]} for r in kept if r["domain"] in metrics_by_domain]
+            notes.append("Gate relaxed: no candidate has measurable authority in the index today; ranked on name quality alone.")
+        for item in enriched:
+            item.pop("_fixture_metrics", None)
+        log(f"::warning title=Authority gate relaxed::{notes[-1]}")
+        funnel["gate_relaxed"] = 1
     funnel["after_authority_gate"] = len(enriched)
     if authority == "none":
         log(f"[enrich] no authority source configured; gate skipped, {len(enriched)} candidates go to scoring on name quality alone")
-    else:
+    elif not notes:
         log(f"[enrich] {len(enriched)} pass the authority gate via {authority} (DR >= {conf.gate.min_dr:g}, refs >= {conf.gate.min_referring_domains} where available)")
 
     # Phase 5: AI score (LLM calls are capped; the heuristic pre-ranks the field first)
@@ -243,7 +267,7 @@ def run(
         audit.record("shortlisted", item["domain"], score=item["score"], suggested_price=item["suggested_price"])
 
     # Phase 7: deliver
-    text, blocks = digest.build_digest(shortlist, drop_date, funnel=funnel)
+    text, blocks = digest.build_digest(shortlist, drop_date, funnel=funnel, notes=notes)
     out = sender or _sender(conf, deliver and not dry_run)
     out.send(text=text, blocks=blocks)
     log(f"[deliver] digest with {len(shortlist)} items sent via {type(out).__name__}")

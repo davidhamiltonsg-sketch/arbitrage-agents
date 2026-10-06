@@ -37,13 +37,17 @@ def format_item(index: int, item: dict[str, Any]) -> str:
     )
 
 
-def build_digest(items: list[dict[str, Any]], date_str: str, *, funnel: dict[str, int] | None = None) -> tuple[str, list[dict[str, Any]]]:
+def build_digest(
+    items: list[dict[str, Any]], date_str: str, *, funnel: dict[str, int] | None = None, notes: list[str] | None = None
+) -> tuple[str, list[dict[str, Any]]]:
     text = f"🔍 Domain Flips Daily Shortlist — {date_str}"
     blocks: list[dict[str, Any]] = [slack.header(f"🔍 High-Yield Dropped Domains ({date_str})"), slack.divider()]
     if not items:
         blocks.append(slack.section("_No domains cleared the authority gate today._"))
     for index, item in enumerate(items, start=1):
         blocks.append(slack.section(format_item(index, item)))
+    for note in notes or []:
+        blocks.append(slack.context(f"⚠️ {slack.escape(note)}"))
     if funnel:
         summary = " → ".join(f"{stage}: {count}" for stage, count in funnel.items())
         blocks.append(slack.context(f"Funnel · {summary}"))

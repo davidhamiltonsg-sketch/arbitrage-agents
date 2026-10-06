@@ -356,7 +356,34 @@ class PipelineTests(NoNetworkTestCase):
             with mock.patch.object(pipeline.enrich, "fetch_openpagerank", lambda ds, k, **kw: {d: {"rank": 1, "dr": 50.0, "referring_domains": None, "total_backlinks": None, "spam_score": None, "first_seen": None} for d in ds}):
                 opr = pipeline.run(pipeline.DomainFlipperConfig(openpagerank_api_key="o", cache_path=":memory:", audit_path=None, max_enrich=2), sender=StdoutSender(io.StringIO()), log=lambda *a, **k: None)
         self.assertEqual(none.funnel["scored"], 6)
-        self.assertEqual(opr.funnel["scored"], 2)
+        self.assertEqual(opr.funnel["scored"], 6)  # the OPR cap is separate and generous
+        with mock.patch.object(pipeline.sources, "fetch_free_dropped_domains", return_value=feed), \
+             mock.patch.object(pipeline.enrich, "fetch_openpagerank", lambda ds, k, **kw: {d: {"rank": 1, "dr": 50.0, "referring_domains": None, "total_backlinks": None, "spam_score": None, "first_seen": None} for d in ds}):
+            capped = pipeline.run(pipeline.DomainFlipperConfig(openpagerank_api_key="o", cache_path=":memory:", audit_path=None, max_openpagerank=2), sender=StdoutSender(io.StringIO()), log=lambda *a, **k: None)
+        self.assertEqual(capped.funnel["scored"], 2)
+
+    def test_gate_relaxes_when_nothing_passes(self):
+        conf = pipeline.DomainFlipperConfig(openpagerank_api_key="opr", cache_path=":memory:", audit_path=None, top_n=5)
+        feed = [sources.normalise_record({"domain": d}) for d in ("alpha.com", "beta.com", "gamma.ai")]
+        low = {"alpha.com": 0.0, "beta.com": 0.4, "gamma.ai": 0.2}
+
+        def fake_opr(domains, key, **kw):
+            return {d: {"rank": None, "dr": low[d] * 10, "referring_domains": None, "total_backlinks": None, "spam_score": None, "first_seen": None} for d in domains}
+
+        sender = StdoutSender(io.StringIO())
+        with mock.patch.object(pipeline.sources, "fetch_free_dropped_domains", return_value=feed), \
+             mock.patch.object(pipeline.enrich, "fetch_openpagerank", fake_opr):
+            result = pipeline.run(conf, sender=sender, log=lambda *a, **k: None)
+        self.assertEqual(result.funnel["gate_relaxed"], 1)
+        self.assertEqual([i["domain"] for i in result.shortlist][:1], ["beta.com"])  # highest measurable authority first
+        self.assertEqual(result.funnel["shortlisted"], 2)  # alpha.com has zero signal and is left out
+        self.assertTrue(any("Gate relaxed" in b.get("elements", [{}])[0].get("text", "") for b in sender.sent[0]["blocks"] if b["type"] == "context"))
+
+        all_zero = {d: 0.0 for d in low}
+        with mock.patch.object(pipeline.sources, "fetch_free_dropped_domains", return_value=feed), \
+             mock.patch.object(pipeline.enrich, "fetch_openpagerank", lambda ds, k, **kw: {d: {"rank": None, "dr": 0.0, "referring_domains": None, "total_backlinks": None, "spam_score": None, "first_seen": None} for d in ds}):
+            result = pipeline.run(conf, sender=StdoutSender(io.StringIO()), log=lambda *a, **k: None)
+        self.assertEqual(result.funnel["shortlisted"], 3)  # name quality alone
 
     def test_live_free_mode_with_openpagerank(self):
         conf = pipeline.DomainFlipperConfig(openpagerank_api_key="opr", cache_path=":memory:", audit_path=None, top_n=5)
