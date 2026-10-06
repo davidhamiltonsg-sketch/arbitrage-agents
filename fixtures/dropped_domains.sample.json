@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-05",
+  "domains": [
+    {"domain": "neurovertex.ai", "drop_date": "2026-10-05", "registrar": "Dynadot", "_fixture_metrics": {"rank": 320, "referring_domains": 64, "total_backlinks": 910}},
+    {"domain": "cloudharbor.com", "drop_date": "2026-10-05", "registrar": "GoDaddy", "_fixture_metrics": {"rank": 240, "referring_domains": 31, "total_backlinks": 402}},
+    {"domain": "brightloom.com", "drop_date": "2026-10-05", "registrar": "Namecheap", "_fixture_metrics": {"rank": 150, "referring_domains": 12, "total_backlinks": 88}},
+    {"domain": "quillset.ai", "drop_date": "2026-10-05", "registrar": "Porkbun", "_fixture_metrics": {"rank": 110, "referring_domains": 7, "total_backlinks": 33}},
+    {"domain": "ferrocast.com", "drop_date": "2026-10-05", "registrar": "Tucows", "_fixture_metrics": {"rank": 60, "referring_domains": 9, "total_backlinks": 40}},
+    {"domain": "lumenpath.com", "drop_date": "2026-10-05", "registrar": "GoDaddy", "_fixture_metrics": {"rank": 410, "referring_domains": 120, "total_backlinks": 2400}},
+    {"domain": "zephyrgrid.ai", "drop_date": "2026-10-05", "registrar": "Dynadot", "_fixture_metrics": {"rank": 180, "referring_domains": 22, "total_backlinks": 190}},
+    {"domain": "orbitalfox.com", "drop_date": "2026-10-05", "registrar": "GoDaddy", "_fixture_metrics": {"rank": 95, "referring_domains": 3, "total_backlinks": 11}},
+    {"domain": "saltmarsh.com", "drop_date": "2026-10-05", "registrar": "Enom", "_fixture_metrics": {"rank": 270, "referring_domains": 45, "total_backlinks": 760}},
+    {"domain": "kinetiq.ai", "drop_date": "2026-10-05", "registrar": "Porkbun", "_fixture_metrics": {"rank": 130, "referring_domains": 15, "total_backlinks": 70}},
+    {"domain": "verdantly.com", "drop_date": "2026-10-05", "registrar": "GoDaddy", "_fixture_metrics": {"rank": 85, "referring_domains": 6, "total_backlinks": 19}},
+    {"domain": "hexaflow.com", "drop_date": "2026-10-05", "registrar": "Namecheap", "_fixture_metrics": {"rank": 200, "referring_domains": 26, "total_backlinks": 310}},
+    {"domain": "aurorastack.ai", "drop_date": "2026-10-05", "registrar": "Dynadot", "_fixture_metrics": {"rank": 40, "referring_domains": 2, "total_backlinks": 4}},
+    {"domain": "my-best-deals.com", "drop_date": "2026-10-05", "registrar": "GoDaddy"},
+    {"domain": "shop24seven.com", "drop_date": "2026-10-05", "registrar": "GoDaddy"},
+    {"domain": "googleanalyticsguide.com", "drop_date": "2026-10-05", "registrar": "GoDaddy"},
+    {"domain": "nikeoutletstorefinder.com", "drop_date": "2026-10-05", "registrar": "Enom"},
+    {"domain": "thisisaverylongdomainnameindeed.com", "drop_date": "2026-10-05", "registrar": "Tucows"},
+    {"domain": "xn--80ak6aa92e.com", "drop_date": "2026-10-05", "registrar": "Reg.ru"},
+    {"domain": "sunnyvalebakery.net", "drop_date": "2026-10-05", "registrar": "GoDaddy"},
+    {"domain": "cloudharbor.com", "drop_date": "2026-10-05", "registrar": "GoDaddy"},
+    {"domain": "pixelforge.io", "drop_date": "2026-10-05", "registrar": "Gandi"},
+    {"domain": "tidewell.com", "drop_date": "2026-10-05", "registrar": "GoDaddy"},
+    {"domain": "northquill.ai", "drop_date": "2026-10-05", "registrar": "Porkbun"}
+  ]
+}
