@@ -39,7 +39,9 @@ def _looks_like_basic_token(value: str, login: str | None) -> bool:
         return False
     if ":" not in decoded or not decoded.isprintable():
         return False
-    return not login or decoded.split(":", 1)[0] == login.strip()
+    user = decoded.split(":", 1)[0]
+    # DataForSEO logins are email addresses; a real password is never base64 of "email:text".
+    return "@" in user or not login or user == login.strip()
 
 
 def basic_auth_header(login: str | None, password: str | None, raw_token: str | None = None) -> str:

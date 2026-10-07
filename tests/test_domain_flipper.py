@@ -162,8 +162,9 @@ class EnrichTests(unittest.TestCase):
         token = base64.b64encode(b"me@example.com:s3cret").decode()
         self.assertEqual(enrich.basic_auth_header("me@example.com", token), f"Basic {token}")
         self.assertEqual(enrich.basic_auth_header(None, token), f"Basic {token}")
-        # ...but only when it decodes to that login; otherwise it is an ordinary password.
-        self.assertEqual(enrich.basic_auth_header("other@example.com", token), "Basic " + base64.b64encode(f"other@example.com:{token}".encode()).decode())
+        # ...even when the login secret differs (the token carries its own email login)...
+        self.assertEqual(enrich.basic_auth_header("other@example.com", token), f"Basic {token}")
+        # ...but a token for a non-email user only counts when it matches the configured login.
         self.assertEqual(enrich.basic_auth_header("a", "YTpi"), "Basic YTpi")  # decodes to a:b for login a: a token
         self.assertEqual(enrich.basic_auth_header("x", "YTpi"), "Basic " + base64.b64encode(b"x:YTpi").decode())  # login mismatch: a password
         self.assertEqual(enrich.basic_auth_header("a", "plainpass"), "Basic " + base64.b64encode(b"a:plainpass").decode())
