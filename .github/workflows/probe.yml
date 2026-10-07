@@ -73,3 +73,19 @@ jobs:
             -d '{"input":{"domains":"lumenpath.com,example.com"}}' -o body.txt -w "status=%{http_code}\n" \
             "https://api.replicate.com/v1/models/gregpriday/humbleworth-price/predictions" || true
           python3 -c "import json; d=json.load(open('body.txt')); print('status', d.get('status'), '| error', d.get('error')); print('output', json.dumps(d.get('output'))[:600])" || head -c 400 body.txt
+      - name: Replicate model lookup (which HumbleWorth model exists and its version)
+        run: |
+          if [ -z "$REPLICATE_API_TOKEN" ]; then echo "REPLICATE_API_TOKEN not set"; exit 0; fi
+          for m in gregpriday/humbleworth-price humbleworth/price-predict-v1; do
+            curl -sS --max-time 20 -H "Authorization: Bearer ${REPLICATE_API_TOKEN}" -o body.txt -w "$m status=%{http_code}\n" "https://api.replicate.com/v1/models/$m" || true
+            python3 -c "import json; d=json.load(open('body.txt')); v=d.get('latest_version') or {}; print('  name', d.get('name'), '| owner', d.get('owner'), '| latest_version', v.get('id'), '| detail', d.get('detail')); s=(v.get('openapi_schema') or {}).get('components',{}).get('schemas',{}); print('  Input', json.dumps(s.get('Input'))[:500]); print('  Output', json.dumps(s.get('Output'))[:300])" || head -c 300 body.txt
+          done
+          curl -sS --max-time 20 -H "Authorization: Bearer ${REPLICATE_API_TOKEN}" -o body.txt -w "account status=%{http_code}\n" "https://api.replicate.com/v1/account" || true
+          python3 -c "import json; d=json.load(open('body.txt')); print('  account', d.get('username'), d.get('type'), '| detail', d.get('detail'))" || head -c 200 body.txt
+      - name: Replicate prediction by version hash
+        run: |
+          if [ -z "$REPLICATE_API_TOKEN" ]; then exit 0; fi
+          curl -sS --max-time 90 -X POST -H "Authorization: Bearer ${REPLICATE_API_TOKEN}" -H "Prefer: wait=60" -H "Content-Type: application/json" \
+            -d '{"version":"5bfbe246a1e25babac007ab24b9d9b08f1319a5d2a89cdea4492e7cd31a7e4fb","input":{"domains":"lumenpath.com,example.com"}}' -o body.txt -w "status=%{http_code}\n" \
+            "https://api.replicate.com/v1/predictions" || true
+          python3 -c "import json; d=json.load(open('body.txt')); print('status', d.get('status'), '| error', d.get('error'), '| detail', d.get('detail')); print('output', json.dumps(d.get('output'))[:600])" || head -c 400 body.txt
