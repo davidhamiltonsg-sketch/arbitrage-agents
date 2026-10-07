@@ -356,8 +356,12 @@ def humbleworth_appraise(
             raise ValueError(f"prediction {status or 'unknown'}: {str(payload.get('error') or '')[:160]}")
         parsed = parse_humbleworth(payload.get("output"))
     except http.HttpError as exc:
-        reason = "Replicate rejected REPLICATE_API_TOKEN" if exc.status in (401, 403) else str(exc)[:200]
-        err = {**base, "status": "denied" if exc.status in (401, 403) else "error", "error": reason}
+        if exc.status in (401, 403):
+            err = {**base, "status": "denied", "error": "Replicate rejected REPLICATE_API_TOKEN"}
+        elif exc.status == 402:
+            err = {**base, "status": "denied", "error": "Replicate: insufficient credit; add a payment method at replicate.com/account/billing"}
+        else:
+            err = {**base, "error": str(exc)[:200]}
         return {**results, **{d: dict(err) for d in pending}}
     except (ValueError, TypeError, KeyError) as exc:
         err = {**base, "error": str(exc)[:200]}
