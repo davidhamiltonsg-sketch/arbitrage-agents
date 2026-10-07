@@ -205,7 +205,8 @@ def appraise(
         parsed = cache.remember("godaddy:appraisal", domain, call, ttl_seconds) if cache else call()
     except http.HttpError as exc:
         if exc.status in (401, 403):
-            return {**base, "status": "denied", "error": "GoDaddy rejected the API key (needs a production key with appraisal access)"}
+            detail = exc.body.decode("utf-8", errors="replace").strip()[:200]
+            return {**base, "status": "denied", "error": f"GoDaddy rejected the API key (HTTP {exc.status}): {detail or 'no detail'}"}
         if exc.status in (404, 422):
             return {**base, "status": "none", "error": "GoDaddy has no appraisal for this name"}
         return {**base, "status": "error", "error": str(exc)[:200]}

@@ -461,7 +461,9 @@ def _deep_enrich(conf, cache: Cache, authority: str, candidates: list[dict[str, 
         valued = sum(1 for i in top if i["appraisal"].get("value") is not None)
         denied = any(i["appraisal"].get("status") == "denied" for i in top)
         if denied:
-            log("::warning title=GoDaddy appraisal denied::GoDaddy rejected GODADDY_API_KEY/SECRET; appraisals skipped this run")
+            why = next((i["appraisal"].get("error") for i in top if i["appraisal"].get("status") == "denied"), "")
+            log(f"::warning title=GoDaddy appraisal denied::{why}. A 401 means the key or secret is wrong (or an OTE test key); "
+                "a 403 ACCESS_DENIED means GoDaddy restricts this endpoint for the account. Appraisals skipped this run.")
         else:
             log(f"[appraise] GoDaddy GoValue for {valued} of {len(top)} candidates")
     return candidates

@@ -362,9 +362,12 @@ class AppraisalTests(unittest.TestCase):
         self.assertEqual(calls, ["https://api.godaddy.com/v1/appraisal/lumenpath.com"])
 
         def denied(url):
-            raise diligence.http.HttpError("HTTP 403", status=403)
+            raise diligence.http.HttpError("HTTP 403", status=403, body=b'{"code":"ACCESS_DENIED","message":"Authenticated user is not allowed access"}')
 
-        self.assertEqual(diligence.appraise("x.com", "sso-key k:s", fetch=denied)["status"], "denied")
+        refused = diligence.appraise("x.com", "sso-key k:s", fetch=denied)
+        self.assertEqual(refused["status"], "denied")
+        self.assertIn("ACCESS_DENIED", refused["error"])
+        self.assertIn("HTTP 403", refused["error"])
 
         def missing(url):
             raise diligence.http.HttpError("HTTP 404", status=404)
