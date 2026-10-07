@@ -18,7 +18,11 @@ CDX_URL = "https://web.archive.org/cdx/search/cdx"
 # GoDaddy still lets use the API (10+ domains or Discount Domain Club since May 2024).
 GODADDY_API_BASE = "https://api.godaddy.com"
 # HumbleWorth's open valuation model, hosted on Replicate (about $0.0001 per run, thousands of domains per run).
-REPLICATE_HUMBLEWORTH_URL = "https://api.replicate.com/v1/models/gregpriday/humbleworth-price/predictions"
+# Community models are run by version id through /v1/predictions; the current version is looked up
+# (and cached for a week) with this hash as the fallback.
+REPLICATE_API = "https://api.replicate.com/v1"
+REPLICATE_HUMBLEWORTH_MODEL = "gregpriday/humbleworth-price"
+REPLICATE_HUMBLEWORTH_VERSION = "5bfbe246a1e25babac007ab24b9d9b08f1319a5d2a89cdea4492e7cd31a7e4fb"
 
 # Marks whose presence in a name is a near-certain conflict. A cheap screen,
 # not clearance: always check the registries linked below before buying.
@@ -287,13 +291,29 @@ def parse_humbleworth(output: Any) -> dict[str, dict[str, Any]]:
     return out
 
 
+def replicate_model_version(token: str, *, cache: Cache | None = None, model: str = REPLICATE_HUMBLEWORTH_MODEL, fallback: str = REPLICATE_HUMBLEWORTH_VERSION, timeout: float = 20.0) -> str:
+    """Current version id of the model, cached a week; the built-in hash when the lookup fails."""
+    def call() -> str:
+        payload = http.get_json(f"{REPLICATE_API}/models/{model}", headers={"Authorization": f"Bearer {token.strip()}"}, timeout=timeout, retries=1)
+        version = ((payload or {}).get("latest_version") or {}).get("id")
+        if not version:
+            raise ValueError("no latest_version in model payload")
+        return str(version)
+
+    try:
+        return cache.remember("replicate:version", model, call, SEVEN_DAYS) if cache else call()
+    except (http.HttpError, ValueError, TypeError, KeyError):
+        return fallback
+
+
 def humbleworth_appraise(
     domains: list[str],
     token: str,
     *,
     cache: Cache | None = None,
     ttl_seconds: float = SEVEN_DAYS,
-    url: str = REPLICATE_HUMBLEWORTH_URL,
+    url: str = f"{REPLICATE_API}/predictions",
+    version: str | None = None,
     timeout: float = 90.0,
     fetch=None,
 ) -> dict[str, dict[str, Any]]:
@@ -313,9 +333,13 @@ def humbleworth_appraise(
         return results
     base = {"status": "error", "source": "humbleworth", "value": None, "currency": "USD", "comparables": [], "reasons": [], "checked_at": checked_at}
     try:
-        body = {"input": {"domains": ",".join(pending)}}
+        if version is None and fetch is None:
+            version = replicate_model_version(token, cache=cache)
+        body = {"version": version or REPLICATE_HUMBLEWORTH_VERSION, "input": {"domains": ",".join(pending)}}
         headers = {"Authorization": f"Bearer {token.strip()}", "Prefer": "wait=60", "Content-Type": "application/json"}
-        payload = fetch(url, body) if fetch is not None else http.post_json(url, body, headers=headers, timeout=timeout, retries=1)
+        # Accounts without a payment method are throttled to a few predictions a minute (HTTP 429 with
+        # Retry-After); the http layer waits and retries, so give it a few attempts.
+        payload = fetch(url, body) if fetch is not None else http.post_json(url, body, headers=headers, timeout=timeout, retries=3, backoff=5.0)
         if not isinstance(payload, dict):
             raise ValueError("unexpected Replicate payload")
         status = payload.get("status")

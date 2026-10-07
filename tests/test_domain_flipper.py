@@ -401,6 +401,8 @@ class AppraisalTests(unittest.TestCase):
         calls = []
 
         def fake(url, body):
+            self.assertEqual(url, "https://api.replicate.com/v1/predictions")
+            self.assertEqual(body["version"], diligence.REPLICATE_HUMBLEWORTH_VERSION)  # community model: version-pinned route
             calls.append(body["input"]["domains"])
             return {"status": "succeeded", "output": [{"domain": d, "auction": 50, "marketplace": 500, "brokerage": 900} for d in body["input"]["domains"].split(",") if d != "missing.com"]}
 
@@ -417,6 +419,16 @@ class AppraisalTests(unittest.TestCase):
 
         self.assertEqual(diligence.humbleworth_appraise(["a.com"], "bad", fetch=denied)["a.com"]["status"], "denied")
         self.assertEqual(diligence.humbleworth_appraise(["a.com"], "tok", fetch=lambda u, b: {"status": "failed", "error": "boom"})["a.com"]["status"], "error")
+
+    def test_replicate_version_lookup_caches_and_falls_back(self):
+        from agents.domain_flipper import diligence
+        cache = Cache(":memory:")
+        with mock.patch.object(diligence.http, "get_json", return_value={"latest_version": {"id": "abc123"}}) as get:
+            self.assertEqual(diligence.replicate_model_version("tok", cache=cache), "abc123")
+            self.assertEqual(diligence.replicate_model_version("tok", cache=cache), "abc123")
+            self.assertEqual(get.call_count, 1)
+        with mock.patch.object(diligence.http, "get_json", side_effect=diligence.http.HttpError("HTTP 500", status=500)):
+            self.assertEqual(diligence.replicate_model_version("tok"), diligence.REPLICATE_HUMBLEWORTH_VERSION)
 
 
 class DigestTests(unittest.TestCase):
