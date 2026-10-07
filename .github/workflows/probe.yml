@@ -13,6 +13,7 @@ jobs:
       GODADDY_API_SECRET: ${{ secrets.GODADDY_API_SECRET }}
       DATAFORSEO_LOGIN: ${{ secrets.DATAFORSEO_LOGIN }}
       DATAFORSEO_PASSWORD: ${{ secrets.DATAFORSEO_PASSWORD }}
+      DATAFORSEO_AUTH: ${{ secrets.DATAFORSEO_AUTH }}
       REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
     steps:
       - name: GoDaddy appraisal, no auth, default agent
@@ -38,7 +39,12 @@ jobs:
           head -c 400 body.txt; echo
       - name: DataForSEO account check
         run: |
-          curl -sS --max-time 20 -u "${DATAFORSEO_LOGIN}:${DATAFORSEO_PASSWORD}" -o body.txt -w "status=%{http_code}\n" "https://api.dataforseo.com/v3/appendix/user_data" || true
+          if [ -n "$DATAFORSEO_AUTH" ]; then
+            echo "using DATAFORSEO_AUTH (base64 token, length ${#DATAFORSEO_AUTH})"
+            curl -sS --max-time 20 -H "Authorization: Basic ${DATAFORSEO_AUTH#Basic }" -o body.txt -w "status=%{http_code}\n" "https://api.dataforseo.com/v3/appendix/user_data" || true
+          else
+            curl -sS --max-time 20 -u "${DATAFORSEO_LOGIN}:${DATAFORSEO_PASSWORD}" -o body.txt -w "status=%{http_code}\n" "https://api.dataforseo.com/v3/appendix/user_data" || true
+          fi
           python3 -c "import json,sys; d=json.load(open('body.txt')); print('status_code', d.get('status_code'), d.get('status_message')); t=(d.get('tasks') or [{}])[0]; r=(t.get('result') or [{}])[0]; print('balance', (r.get('money') or {}).get('balance'))" || head -c 300 body.txt
           echo "login length: ${#DATAFORSEO_LOGIN}, password length: ${#DATAFORSEO_PASSWORD}, login has @: $([[ "$DATAFORSEO_LOGIN" == *@* ]] && echo yes || echo no)"
       - name: Humbleworth free valuation (alternative to GoDaddy)

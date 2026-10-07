@@ -52,6 +52,8 @@ jobs:
       OPENPAGERANK_API_KEY: ${{ secrets.OPENPAGERANK_API_KEY }}
       DATAFORSEO_LOGIN: ${{ secrets.DATAFORSEO_LOGIN }}
       DATAFORSEO_PASSWORD: ${{ secrets.DATAFORSEO_PASSWORD }}
+      # Alternative to login+password: the base64 "login:password" token DataForSEO shows on its API Access page
+      DATAFORSEO_AUTH: ${{ secrets.DATAFORSEO_AUTH }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       # GoDaddy production API key + secret (developer.godaddy.com) for free GoValue appraisals
       GODADDY_API_KEY: ${{ secrets.GODADDY_API_KEY }}
