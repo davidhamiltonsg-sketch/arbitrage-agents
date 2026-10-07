@@ -40,3 +40,9 @@ jobs:
           curl -sS --max-time 20 -u "${DATAFORSEO_LOGIN}:${DATAFORSEO_PASSWORD}" -o body.txt -w "status=%{http_code}\n" "https://api.dataforseo.com/v3/appendix/user_data" || true
           python3 -c "import json,sys; d=json.load(open('body.txt')); print('status_code', d.get('status_code'), d.get('status_message')); t=(d.get('tasks') or [{}])[0]; r=(t.get('result') or [{}])[0]; print('balance', (r.get('money') or {}).get('balance'))" || head -c 300 body.txt
           echo "login length: ${#DATAFORSEO_LOGIN}, password length: ${#DATAFORSEO_PASSWORD}, login has @: $([[ "$DATAFORSEO_LOGIN" == *@* ]] && echo yes || echo no)"
+      - name: Humbleworth free valuation (alternative to GoDaddy)
+        run: |
+          curl -sS --max-time 20 -X POST -H "Content-Type: application/json" -H "Accept: application/json" -d '{"domains":["lumenpath.com","example.com"]}' -o body.txt -w "status=%{http_code}\n" "https://valuation.humbleworth.com/api/valuation" || true
+          head -c 800 body.txt; echo
+          curl -sS --max-time 20 -H "Accept: application/json" -o body.txt -w "status=%{http_code}\n" "https://valuation.humbleworth.com/api/valuation?domains=lumenpath.com" || true
+          head -c 400 body.txt; echo
