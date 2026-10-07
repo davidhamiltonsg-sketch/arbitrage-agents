@@ -21,6 +21,7 @@ DOMAIN_SOURCES = ("auto", "whoisfreaks", "whoisfreaks-free")
 AUTHORITY_SOURCES = ("auto", "dataforseo", "openpagerank", "none")
 DEEP_AUTHORITY_SOURCES = ("auto", "dataforseo", "none")
 AVAILABILITY_CHECKS = ("auto", "rdap", "none")
+APPRAISAL_SOURCES = ("auto", "humbleworth", "godaddy", "none")
 
 
 @dataclass
@@ -46,6 +47,8 @@ class DomainFlipperConfig:
     godaddy_api_key: str | None = None
     godaddy_api_secret: str | None = None
     godaddy_api_base: str = diligence.GODADDY_API_BASE
+    appraisal_source: str = "auto"
+    replicate_api_token: str | None = None
     openai_api_key: str | None = None
     openai_model: str = "gpt-4o-mini"
     openai_base_url: str = "https://api.openai.com/v1"
@@ -90,6 +93,8 @@ class DomainFlipperConfig:
             godaddy_api_key=cfg.env("GODADDY_API_KEY"),
             godaddy_api_secret=cfg.env("GODADDY_API_SECRET"),
             godaddy_api_base=cfg.env("GODADDY_API_BASE", diligence.GODADDY_API_BASE) or diligence.GODADDY_API_BASE,
+            appraisal_source=(cfg.env("APPRAISAL_SOURCE", "auto") or "auto").lower(),
+            replicate_api_token=cfg.env("REPLICATE_API_TOKEN"),
             openai_api_key=cfg.env("OPENAI_API_KEY"),
             openai_model=cfg.env("OPENAI_MODEL_DOMAIN", cfg.env("OPENAI_MODEL", "gpt-4o-mini")) or "gpt-4o-mini",
             openai_base_url=cfg.env("OPENAI_BASE_URL", "https://api.openai.com/v1") or "https://api.openai.com/v1",
@@ -137,6 +142,15 @@ class DomainFlipperConfig:
 
     def godaddy_auth(self) -> str | None:
         return diligence.godaddy_auth_header(self.godaddy_api_key, self.godaddy_api_secret)
+
+    def resolved_appraisal_source(self) -> str:
+        if self.appraisal_source not in APPRAISAL_SOURCES:
+            raise SystemExit(f"APPRAISAL_SOURCE must be one of {', '.join(APPRAISAL_SOURCES)}, got {self.appraisal_source!r}")
+        if self.appraisal_source == "auto":
+            if self.replicate_api_token:
+                return "humbleworth"
+            return "godaddy" if self.godaddy_auth() else "none"
+        return self.appraisal_source
 
 
 @dataclass
@@ -338,7 +352,13 @@ def run(
         audit.record("shortlisted", item["domain"], score=item["score"], suggested_price=item["suggested_price"])
 
     # Phase 6b: due diligence on the shortlist only (Wayback history + trademark screen + appraisal)
-    godaddy = conf.godaddy_auth()
+    if not dry_run:
+        missing = [i for i in shortlist if "appraisal" not in i]
+        if missing:
+            for domain, appraisal in _appraise_many(conf, cache, [i["domain"] for i in missing]).items():
+                for i in missing:
+                    if i["domain"] == domain:
+                        i["appraisal"] = appraisal
     for item in shortlist:
         if dry_run:
             item.update(diligence.sample_diligence(item["domain"]))
@@ -346,8 +366,7 @@ def run(
         else:
             item["wayback"] = diligence.wayback_summary(item["domain"])
             item["trademark"] = diligence.trademark_screen(item["domain"])
-            if "appraisal" not in item:
-                item["appraisal"] = diligence.appraise(item["domain"], godaddy, cache=cache, base_url=conf.godaddy_api_base) if godaddy else {"status": "unconfigured", "source": "godaddy", "value": None, "comparables": []}
+            item.setdefault("appraisal", {"status": "unconfigured", "source": "none", "value": None, "comparables": []})
         audit.record("diligence", item["domain"], wayback=item["wayback"].get("status"), trademark_risk=item["trademark"].get("risk"),
                      appraisal=item["appraisal"].get("value"), availability=(item.get("availability") or {}).get("status"))
     if shortlist:
@@ -373,7 +392,7 @@ def run(
             "authority": authority,
             "deep_authority": "fixture" if dry_run else conf.resolved_deep_authority(),
             "availability": "sample" if dry_run else conf.resolved_availability_check(),
-            "appraisal": "sample" if dry_run else ("godaddy" if conf.godaddy_auth() else "none"),
+            "appraisal": "sample" if dry_run else conf.resolved_appraisal_source(),
         },
     )
 
@@ -420,12 +439,27 @@ def _check_availability(conf, cache: Cache, candidates: list[dict[str, Any]], dr
     return kept
 
 
+def _appraise_many(conf, cache: Cache, domains: list[str]) -> dict[str, dict[str, Any]]:
+    """Appraise domains with the configured source; one Replicate call for HumbleWorth, per-domain for GoDaddy."""
+    source = conf.resolved_appraisal_source()
+    if source == "humbleworth":
+        if not conf.replicate_api_token:
+            raise SystemExit("APPRAISAL_SOURCE=humbleworth needs REPLICATE_API_TOKEN")
+        return diligence.humbleworth_appraise(domains, conf.replicate_api_token, cache=cache)
+    if source == "godaddy":
+        auth = conf.godaddy_auth()
+        if not auth:
+            raise SystemExit("APPRAISAL_SOURCE=godaddy needs GODADDY_API_KEY and GODADDY_API_SECRET")
+        return {d: diligence.appraise(d, auth, cache=cache, base_url=conf.godaddy_api_base) for d in domains}
+    return {d: {"status": "unconfigured", "source": "none", "value": None, "comparables": []} for d in domains}
+
+
 def _deep_enrich(conf, cache: Cache, authority: str, candidates: list[dict[str, Any]], dry_run: bool, audit: AuditLog, funnel: dict[str, int], log) -> list[dict[str, Any]]:
     if not candidates or dry_run:
         return candidates
     deep = conf.resolved_deep_authority()
-    godaddy = conf.godaddy_auth()
-    if deep == "none" and not godaddy:
+    appraisal_source = conf.resolved_appraisal_source()
+    if deep == "none" and appraisal_source == "none":
         return candidates
     ordered = _prerank(candidates)
     top = ordered[: conf.max_deep_enrich]
@@ -454,18 +488,19 @@ def _deep_enrich(conf, cache: Cache, authority: str, candidates: list[dict[str, 
             done += 1
         funnel["deep_enriched"] = done
         log(f"[deep] DataForSEO link counts for the top {done} of {len(candidates)} candidates (DOMAIN_MAX_DEEP_ENRICH={conf.max_deep_enrich})")
-    if godaddy:
+    if appraisal_source != "none":
+        appraisals = _appraise_many(conf, cache, [i["domain"] for i in top])
         for item in top:
-            item["appraisal"] = diligence.appraise(item["domain"], godaddy, cache=cache, base_url=conf.godaddy_api_base)
+            item["appraisal"] = appraisals.get(item["domain"].lower()) or {"status": "none", "source": appraisal_source, "value": None, "comparables": []}
             audit.record("appraised", item["domain"], status=item["appraisal"].get("status"), value=item["appraisal"].get("value"))
         valued = sum(1 for i in top if i["appraisal"].get("value") is not None)
-        denied = any(i["appraisal"].get("status") == "denied" for i in top)
-        if denied:
-            why = next((i["appraisal"].get("error") for i in top if i["appraisal"].get("status") == "denied"), "")
-            log(f"::warning title=GoDaddy appraisal denied::{why}. A 401 means the key or secret is wrong (or an OTE test key); "
-                "a 403 ACCESS_DENIED means GoDaddy restricts this endpoint for the account. Appraisals skipped this run.")
-        else:
-            log(f"[appraise] GoDaddy GoValue for {valued} of {len(top)} candidates")
+        failed = next((i["appraisal"] for i in top if i["appraisal"].get("status") in ("denied", "error")), None)
+        if failed:
+            why = failed.get("error", "")
+            hint = (" A 401 means the key or secret is wrong (or an OTE test key); a 403 ACCESS_DENIED means GoDaddy restricts the API for this account."
+                    if appraisal_source == "godaddy" else "")
+            log(f"::warning title={appraisal_source} appraisal {failed.get('status')}::{why}.{hint} Appraisals affected this run.")
+        log(f"[appraise] {appraisal_source} valued {valued} of {len(top)} candidates")
     return candidates
 
 

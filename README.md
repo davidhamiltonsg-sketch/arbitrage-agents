@@ -23,7 +23,7 @@ The Domain Flipper runs live with **no paid keys**:
 | Dropped-domain feed | WhoisFreaks' public GitHub sample: 10,000 dropped domains a day, partial gTLD coverage, no key (`DOMAIN_SOURCE=whoisfreaks-free`) | WhoisFreaks Domainer package: ~400,000 a day, all TLDs (`DOMAIN_SOURCE=whoisfreaks` + `WHOISFREAKS_API_KEY`) |
 | Authority metrics | Open PageRank: free API key, 0 to 10 score from the Common Crawl host graph, no link counts (`AUTHORITY_SOURCE=openpagerank` + `OPENPAGERANK_API_KEY`) | DataForSEO: DR-like rank plus referring domains, backlinks and spam score. With both keys set, Open PageRank gates the whole field and DataForSEO goes deep on the top `DOMAIN_MAX_DEEP_ENRICH` (25) names only, so the metered spend stays at a few cents a run |
 | Availability | Registry RDAP lookup, no key: names a drop-catcher already re-registered are dropped before scoring; "pending delete" names are flagged for a backorder (`DOMAIN_AVAILABILITY_CHECK=rdap`, cap `DOMAIN_MAX_AVAILABILITY=150`) | – |
-| Appraisal | GoDaddy GoValue estimate with comparable sales, free with a production API key from developer.godaddy.com (`GODADDY_API_KEY` + `GODADDY_API_SECRET`); the model sees it before scoring | – |
+| Appraisal | HumbleWorth's open valuation model on Replicate: auction, marketplace and brokerage estimates for the whole deep set in one call, about $0.0001 a run (`REPLICATE_API_TOKEN`); the model sees it before scoring | GoDaddy GoValue with comparable sales (`GODADDY_API_KEY` + `GODADDY_API_SECRET`), but only for accounts GoDaddy still allows on its API: 10+ domains or Discount Domain Club since May 2024 |
 | Scoring | Built-in rubric heuristic | OpenAI structured output (`OPENAI_API_KEY`) |
 | Delivery | GitHub issue + run summary | Slack webhook on top |
 
@@ -85,7 +85,8 @@ from the GitHub mobile app or a phone browser.
 
 1. **Add keys** (all optional) at *Settings → Secrets and variables → Actions →
    New repository secret*. Free and most useful first: `OPENPAGERANK_API_KEY`.
-   Also free: `GODADDY_API_KEY` and `GODADDY_API_SECRET` for appraisals.
+   Near-free: `REPLICATE_API_TOKEN` for HumbleWorth appraisals (GoDaddy's `GODADDY_API_KEY`
+   and `GODADDY_API_SECRET` work only for accounts GoDaddy admits to its API).
    Paid upgrades: `WHOISFREAKS_API_KEY` (Domainer package), `DATAFORSEO_LOGIN`
    and `DATAFORSEO_PASSWORD` (both needed, used on the top names only), and `OPENAI_API_KEY` for AI scoring. For the SaaS Scout also
    `SAAS_LISTINGS_URL` (a URL that returns the listings JSON, such as an Apify

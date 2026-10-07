@@ -374,7 +374,38 @@ class AppraisalTests(unittest.TestCase):
 
         self.assertEqual(diligence.appraise("x.com", "sso-key k:s", fetch=missing)["status"], "none")
         self.assertEqual(diligence.appraise("x.com", "sso-key k:s", fetch=lambda url: "nope")["status"], "error")
-        self.assertIn("GODADDY_API_KEY", diligence.describe_appraisal({"status": "unconfigured"}))
+        self.assertIn("REPLICATE_API_TOKEN", diligence.describe_appraisal({"status": "unconfigured"}))
+
+    def test_humbleworth_parsing_and_batch_call(self):
+        from agents.domain_flipper import diligence
+        rows = [{"domain": "lumenpath.com", "auction": 120.4, "marketplace": 1450, "brokerage": 3900}, {"domain": "x.ai", "auction": None, "marketplace": None, "brokerage": None}]
+        parsed = diligence.parse_humbleworth(rows)
+        self.assertEqual(parsed["lumenpath.com"]["value"], 1450)
+        self.assertEqual(parsed["lumenpath.com"]["auction"], 120)
+        self.assertEqual(parsed["x.ai"]["status"], "none")
+        self.assertEqual(diligence.parse_humbleworth({"valuations": rows})["lumenpath.com"]["brokerage"], 3900)
+        self.assertEqual(diligence.parse_humbleworth({"lumenpath.com": {"auction": 100}})["lumenpath.com"]["value"], 100)
+        self.assertIn("marketplace $1,450", diligence.describe_appraisal(parsed["lumenpath.com"]))
+
+        calls = []
+
+        def fake(url, body):
+            calls.append(body["input"]["domains"])
+            return {"status": "succeeded", "output": [{"domain": d, "auction": 50, "marketplace": 500, "brokerage": 900} for d in body["input"]["domains"].split(",") if d != "missing.com"]}
+
+        cache = Cache(":memory:")
+        out = diligence.humbleworth_appraise(["Lumenpath.com", "missing.com"], "tok", cache=cache, fetch=fake)
+        self.assertEqual(out["lumenpath.com"]["value"], 500)
+        self.assertEqual(out["missing.com"]["status"], "none")
+        again = diligence.humbleworth_appraise(["lumenpath.com"], "tok", cache=cache, fetch=fake)
+        self.assertEqual(again["lumenpath.com"]["value"], 500)
+        self.assertEqual(calls, ["lumenpath.com,missing.com"])  # second call served from cache
+
+        def denied(url, body):
+            raise diligence.http.HttpError("HTTP 401", status=401)
+
+        self.assertEqual(diligence.humbleworth_appraise(["a.com"], "bad", fetch=denied)["a.com"]["status"], "denied")
+        self.assertEqual(diligence.humbleworth_appraise(["a.com"], "tok", fetch=lambda u, b: {"status": "failed", "error": "boom"})["a.com"]["status"], "error")
 
 
 class DigestTests(unittest.TestCase):
@@ -448,6 +479,9 @@ class PipelineTests(NoNetworkTestCase):
         self.assertEqual(only_paid.resolved_authority_source(), "dataforseo")
         self.assertEqual(only_paid.resolved_deep_authority(), "none")
         self.assertEqual(pipeline.DomainFlipperConfig().resolved_availability_check(), "rdap")
+        self.assertEqual(pipeline.DomainFlipperConfig().resolved_appraisal_source(), "none")
+        self.assertEqual(pipeline.DomainFlipperConfig(godaddy_api_key="k", godaddy_api_secret="s").resolved_appraisal_source(), "godaddy")
+        self.assertEqual(pipeline.DomainFlipperConfig(godaddy_api_key="k", godaddy_api_secret="s", replicate_api_token="t").resolved_appraisal_source(), "humbleworth")
         self.assertEqual(pipeline.DomainFlipperConfig(availability_check="none").resolved_availability_check(), "none")
         with self.assertRaises(SystemExit):
             pipeline.DomainFlipperConfig(availability_check="bogus").resolved_availability_check()
@@ -639,6 +673,26 @@ class PipelineTests(NoNetworkTestCase):
         self.assertEqual(result.sources["deep_authority"], "dataforseo")
         self.assertEqual(result.sources["appraisal"], "godaddy")
         self.assertIn("Ref Domains", digest.metrics_line(deep))
+
+    def test_humbleworth_appraises_the_deep_set_in_one_call(self):
+        conf = pipeline.DomainFlipperConfig(openpagerank_api_key="opr", replicate_api_token="tok", cache_path=":memory:", audit_path=None, top_n=2, max_deep_enrich=2)
+        feed = [sources.normalise_record({"domain": d}) for d in ("lumenpath.com", "neuro.ai", "orbitly.com")]
+        opr = lambda ds, k, **kw: {d: {"rank": 1, "dr": 30.0, "referring_domains": None, "total_backlinks": None, "spam_score": None, "first_seen": None, "authority_source": "openpagerank"} for d in ds}
+        batches = []
+
+        def fake_hw(domains, token, **kw):
+            batches.append(list(domains))
+            return {d.lower(): {"status": "ok", "source": "humbleworth", "value": 700, "auction": 90, "marketplace": 700, "brokerage": 1500, "currency": "USD", "comparables": [], "reasons": []} for d in domains}
+
+        with mock.patch.object(pipeline.sources, "fetch_free_dropped_domains", return_value=feed), \
+             mock.patch.object(pipeline.enrich, "fetch_openpagerank", opr), \
+             mock.patch.object(pipeline.diligence, "humbleworth_appraise", fake_hw), \
+             mock.patch.object(pipeline.diligence, "wayback_summary", lambda d, **kw: {"status": "none", "timeline_url": "t"}):
+            result = pipeline.run(conf, sender=StdoutSender(io.StringIO()), log=lambda *a, **k: None)
+        self.assertEqual(len(batches[0]), 2)                        # the deep set went up in one call
+        self.assertTrue(all(i["appraisal"]["value"] == 700 for i in result.shortlist))
+        self.assertEqual(result.sources["appraisal"], "humbleworth")
+        self.assertIn("HumbleWorth", digest.diligence_lines(result.shortlist[0]))
 
     def test_deep_enrichment_credential_failure_warns_and_continues(self):
         from agents.common import http as common_http

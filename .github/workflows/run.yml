@@ -56,6 +56,8 @@ jobs:
       # GoDaddy production API key + secret (developer.godaddy.com) for free GoValue appraisals
       GODADDY_API_KEY: ${{ secrets.GODADDY_API_KEY }}
       GODADDY_API_SECRET: ${{ secrets.GODADDY_API_SECRET }}
+      # Replicate token (replicate.com/account/api-tokens) for HumbleWorth valuations, about $0.0001 per run
+      REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
       BUILTWITH_API_KEY: ${{ secrets.BUILTWITH_API_KEY }}
       SIMILARWEB_API_KEY: ${{ secrets.SIMILARWEB_API_KEY }}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -76,6 +78,8 @@ jobs:
       DOMAIN_MAX_ENRICH: ${{ vars.DOMAIN_MAX_ENRICH }}
       DOMAIN_MAX_DEEP_ENRICH: ${{ vars.DOMAIN_MAX_DEEP_ENRICH }}
       DOMAIN_AVAILABILITY_CHECK: ${{ vars.DOMAIN_AVAILABILITY_CHECK }}
+      # auto | humbleworth | godaddy | none
+      APPRAISAL_SOURCE: ${{ vars.APPRAISAL_SOURCE }}
       SAAS_TOP_N: ${{ vars.SAAS_TOP_N }}
       SAAS_MAX_ASKING_PRICE: ${{ vars.SAAS_MAX_ASKING_PRICE }}
       SAAS_SOURCES: file

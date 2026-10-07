@@ -14,8 +14,11 @@ from ..common import http
 from ..common.cache import SEVEN_DAYS, Cache
 
 CDX_URL = "https://web.archive.org/cdx/search/cdx"
-# GoDaddy's appraisal (GoValue) is free with a production API key from developer.godaddy.com.
+# GoDaddy's appraisal (GoValue) needs a production API key from developer.godaddy.com AND an account
+# GoDaddy still lets use the API (10+ domains or Discount Domain Club since May 2024).
 GODADDY_API_BASE = "https://api.godaddy.com"
+# HumbleWorth's open valuation model, hosted on Replicate (about $0.0001 per run, thousands of domains per run).
+REPLICATE_HUMBLEWORTH_URL = "https://api.replicate.com/v1/models/gregpriday/humbleworth-price/predictions"
 
 # Marks whose presence in a name is a near-certain conflict. A cheap screen,
 # not clearance: always check the registries linked below before buying.
@@ -226,14 +229,119 @@ def describe_appraisal(a: dict[str, Any] | None) -> str:
     status = (a or {}).get("status")
     if status in ("ok", "sample") and a.get("value") is not None:
         comps = a.get("comparables") or []
+        if a.get("source") == "humbleworth":
+            parts = [f"{k} ${a[k]:,}" for k in ("auction", "marketplace", "brokerage") if a.get(k) is not None]
+            return "HumbleWorth " + " · ".join(parts)
         text = f"GoDaddy GoValue ${a['value']:,}" + (" (sample)" if status == "sample" else "")
         if comps:
             text += " · comps: " + ", ".join(f"{c['domain']} ${c['price']:,}" + (f" ({c['year']})" if c.get("year") else "") for c in comps[:3])
         return text
     if status == "none":
         return "no GoDaddy appraisal for this name"
+    name = "HumbleWorth" if (a or {}).get("source") == "humbleworth" else "GoDaddy"
     if status == "denied":
-        return "GoDaddy appraisal denied: check GODADDY_API_KEY/SECRET"
+        return f"{name} appraisal denied: check the API credentials"
     if status == "error":
-        return "GoDaddy appraisal failed on the runner"
-    return "no appraisal (add GODADDY_API_KEY and GODADDY_API_SECRET)"
+        return f"{name} appraisal failed on the runner"
+    return "no appraisal (add REPLICATE_API_TOKEN for HumbleWorth, or GoDaddy credentials)"
+
+
+def parse_humbleworth(output: Any) -> dict[str, dict[str, Any]]:
+    """Map a HumbleWorth prediction output to appraisals keyed by domain.
+
+    The model answers with one row per domain carrying ``auction``, ``marketplace``
+    and ``brokerage`` estimates (USD). Rows may arrive as a list of objects, a dict
+    keyed by domain, or wrapped in ``valuations``; all three are accepted.
+    """
+    rows: list[tuple[str, Any]] = []
+    if isinstance(output, dict) and isinstance(output.get("valuations"), list):
+        output = output["valuations"]
+    if isinstance(output, list):
+        for row in output:
+            if isinstance(row, dict) and row.get("domain"):
+                rows.append((str(row["domain"]), row))
+    elif isinstance(output, dict):
+        for domain, row in output.items():
+            if isinstance(row, dict):
+                rows.append((str(domain), row))
+    out: dict[str, dict[str, Any]] = {}
+    for domain, row in rows:
+        def num(key: str) -> int | None:
+            try:
+                return int(round(float(row.get(key)))) if row.get(key) is not None else None
+            except (TypeError, ValueError):
+                return None
+        auction, marketplace, brokerage = num("auction"), num("marketplace"), num("brokerage")
+        headline = marketplace if marketplace is not None else auction
+        out[domain.lower().strip()] = {
+            "status": "ok" if headline is not None else "none",
+            "source": "humbleworth",
+            "value": headline,
+            "currency": "USD",
+            "auction": auction,
+            "marketplace": marketplace,
+            "brokerage": brokerage,
+            "comparables": [],
+            "reasons": [],
+        }
+    return out
+
+
+def humbleworth_appraise(
+    domains: list[str],
+    token: str,
+    *,
+    cache: Cache | None = None,
+    ttl_seconds: float = SEVEN_DAYS,
+    url: str = REPLICATE_HUMBLEWORTH_URL,
+    timeout: float = 90.0,
+    fetch=None,
+) -> dict[str, dict[str, Any]]:
+    """Value many domains in one Replicate prediction; never raises. Missing domains get an error entry."""
+    from ..common.cache import cache_key
+
+    checked_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    results: dict[str, dict[str, Any]] = {}
+    pending: list[str] = []
+    for domain in dict.fromkeys(d.lower().strip() for d in domains):
+        hit = cache.get(cache_key("humbleworth", domain)) if cache else None
+        if hit is not None:
+            results[domain] = hit
+        else:
+            pending.append(domain)
+    if not pending:
+        return results
+    base = {"status": "error", "source": "humbleworth", "value": None, "currency": "USD", "comparables": [], "reasons": [], "checked_at": checked_at}
+    try:
+        body = {"input": {"domains": ",".join(pending)}}
+        headers = {"Authorization": f"Bearer {token.strip()}", "Prefer": "wait=60", "Content-Type": "application/json"}
+        payload = fetch(url, body) if fetch is not None else http.post_json(url, body, headers=headers, timeout=timeout, retries=1)
+        if not isinstance(payload, dict):
+            raise ValueError("unexpected Replicate payload")
+        status = payload.get("status")
+        if status in ("starting", "processing") and payload.get("urls", {}).get("get") and fetch is None:
+            import time
+
+            for _ in range(20):
+                time.sleep(2)
+                payload = http.get_json(payload["urls"]["get"], headers={"Authorization": headers["Authorization"]}, timeout=30, retries=1)
+                status = payload.get("status")
+                if status not in ("starting", "processing"):
+                    break
+        if status != "succeeded":
+            raise ValueError(f"prediction {status or 'unknown'}: {str(payload.get('error') or '')[:160]}")
+        parsed = parse_humbleworth(payload.get("output"))
+    except http.HttpError as exc:
+        reason = "Replicate rejected REPLICATE_API_TOKEN" if exc.status in (401, 403) else str(exc)[:200]
+        err = {**base, "status": "denied" if exc.status in (401, 403) else "error", "error": reason}
+        return {**results, **{d: dict(err) for d in pending}}
+    except (ValueError, TypeError, KeyError) as exc:
+        err = {**base, "error": str(exc)[:200]}
+        return {**results, **{d: dict(err) for d in pending}}
+    for domain in pending:
+        item = parsed.get(domain)
+        entry = {**base, **item, "checked_at": checked_at} if item else {**base, "status": "none", "error": "no valuation returned"}
+        results[domain] = entry
+        if cache and item:
+            cache.set(cache_key("humbleworth", domain), entry, ttl_seconds)
+    return results

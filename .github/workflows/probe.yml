@@ -13,6 +13,7 @@ jobs:
       GODADDY_API_SECRET: ${{ secrets.GODADDY_API_SECRET }}
       DATAFORSEO_LOGIN: ${{ secrets.DATAFORSEO_LOGIN }}
       DATAFORSEO_PASSWORD: ${{ secrets.DATAFORSEO_PASSWORD }}
+      REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
     steps:
       - name: GoDaddy appraisal, no auth, default agent
         run: |
@@ -46,3 +47,10 @@ jobs:
           head -c 800 body.txt; echo
           curl -sS --max-time 20 -H "Accept: application/json" -o body.txt -w "status=%{http_code}\n" "https://valuation.humbleworth.com/api/valuation?domains=lumenpath.com" || true
           head -c 400 body.txt; echo
+      - name: HumbleWorth on Replicate (needs REPLICATE_API_TOKEN)
+        run: |
+          if [ -z "$REPLICATE_API_TOKEN" ]; then echo "REPLICATE_API_TOKEN not set"; exit 0; fi
+          curl -sS --max-time 90 -X POST -H "Authorization: Bearer ${REPLICATE_API_TOKEN}" -H "Prefer: wait=60" -H "Content-Type: application/json" \
+            -d '{"input":{"domains":"lumenpath.com,example.com"}}' -o body.txt -w "status=%{http_code}\n" \
+            "https://api.replicate.com/v1/models/gregpriday/humbleworth-price/predictions" || true
+          python3 -c "import json; d=json.load(open('body.txt')); print('status', d.get('status'), '| error', d.get('error')); print('output', json.dumps(d.get('output'))[:600])" || head -c 400 body.txt
