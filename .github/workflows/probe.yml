@@ -1,0 +1,42 @@
+name: Probe API credentials
+# Manual diagnostic: shows how GoDaddy and DataForSEO answer the runner. Prints status codes and
+# the first lines of each reply only; GitHub masks secret values in logs.
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GODADDY_API_KEY: ${{ secrets.GODADDY_API_KEY }}
+      GODADDY_API_SECRET: ${{ secrets.GODADDY_API_SECRET }}
+      DATAFORSEO_LOGIN: ${{ secrets.DATAFORSEO_LOGIN }}
+      DATAFORSEO_PASSWORD: ${{ secrets.DATAFORSEO_PASSWORD }}
+    steps:
+      - name: GoDaddy appraisal, no auth, default agent
+        run: |
+          curl -sS --max-time 20 -o body.txt -w "status=%{http_code}\n" "https://api.godaddy.com/v1/appraisal/example.com" || true
+          head -c 300 body.txt; echo
+      - name: GoDaddy appraisal, no auth, browser agent
+        run: |
+          curl -sS --max-time 20 -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36" -H "Accept: application/json" -o body.txt -w "status=%{http_code}\n" "https://api.godaddy.com/v1/appraisal/example.com" || true
+          head -c 300 body.txt; echo
+      - name: GoDaddy appraisal, with key, browser agent
+        run: |
+          curl -sS --max-time 20 -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36" -H "Accept: application/json" -H "Authorization: sso-key ${GODADDY_API_KEY}:${GODADDY_API_SECRET}" -o body.txt -w "status=%{http_code}\n" "https://api.godaddy.com/v1/appraisal/example.com" || true
+          head -c 400 body.txt; echo
+          echo "key length: ${#GODADDY_API_KEY}, secret length: ${#GODADDY_API_SECRET}"
+      - name: GoDaddy domain availability, with key (is the key accepted anywhere?)
+        run: |
+          curl -sS --max-time 20 -A "Mozilla/5.0" -H "Accept: application/json" -H "Authorization: sso-key ${GODADDY_API_KEY}:${GODADDY_API_SECRET}" -o body.txt -w "status=%{http_code}\n" "https://api.godaddy.com/v1/domains/available?domain=example.com" || true
+          head -c 400 body.txt; echo
+      - name: GoDaddy OTE appraisal, with key
+        run: |
+          curl -sS --max-time 20 -A "Mozilla/5.0" -H "Accept: application/json" -H "Authorization: sso-key ${GODADDY_API_KEY}:${GODADDY_API_SECRET}" -o body.txt -w "status=%{http_code}\n" "https://api.ote-godaddy.com/v1/appraisal/example.com" || true
+          head -c 400 body.txt; echo
+      - name: DataForSEO account check
+        run: |
+          curl -sS --max-time 20 -u "${DATAFORSEO_LOGIN}:${DATAFORSEO_PASSWORD}" -o body.txt -w "status=%{http_code}\n" "https://api.dataforseo.com/v3/appendix/user_data" || true
+          python3 -c "import json,sys; d=json.load(open('body.txt')); print('status_code', d.get('status_code'), d.get('status_message')); t=(d.get('tasks') or [{}])[0]; r=(t.get('result') or [{}])[0]; print('balance', (r.get('money') or {}).get('balance'))" || head -c 300 body.txt
+          echo "login length: ${#DATAFORSEO_LOGIN}, password length: ${#DATAFORSEO_PASSWORD}, login has @: $([[ "$DATAFORSEO_LOGIN" == *@* ]] && echo yes || echo no)"
