@@ -418,6 +418,13 @@ class AppraisalTests(unittest.TestCase):
             raise diligence.http.HttpError("HTTP 401", status=401)
 
         self.assertEqual(diligence.humbleworth_appraise(["a.com"], "bad", fetch=denied)["a.com"]["status"], "denied")
+
+        def broke(url, body):
+            raise diligence.http.HttpError("HTTP 402", status=402)
+
+        unpaid = diligence.humbleworth_appraise(["a.com"], "tok", fetch=broke)["a.com"]
+        self.assertEqual(unpaid["status"], "denied")
+        self.assertIn("payment method", unpaid["error"])
         self.assertEqual(diligence.humbleworth_appraise(["a.com"], "tok", fetch=lambda u, b: {"status": "failed", "error": "boom"})["a.com"]["status"], "error")
 
     def test_replicate_version_lookup_caches_and_falls_back(self):
