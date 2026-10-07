@@ -637,6 +637,36 @@ class PipelineTests(NoNetworkTestCase):
         self.assertEqual(result.sources["appraisal"], "godaddy")
         self.assertIn("Ref Domains", digest.metrics_line(deep))
 
+    def test_deep_enrichment_credential_failure_warns_and_continues(self):
+        from agents.common import http as common_http
+        conf = pipeline.DomainFlipperConfig(openpagerank_api_key="opr", dataforseo_auth="Basic bad", cache_path=":memory:", audit_path=None, top_n=3, max_deep_enrich=3)
+        feed = [sources.normalise_record({"domain": d}) for d in ("lumenpath.com", "neuro.ai", "orbitly.com")]
+        opr = lambda ds, k, **kw: {d: {"rank": 1, "dr": 30.0, "referring_domains": None, "total_backlinks": None, "spam_score": None, "first_seen": None, "authority_source": "openpagerank"} for d in ds}
+        calls, logs = [], []
+
+        def unauthorised(domain, auth, **kw):
+            calls.append(domain)
+            raise common_http.HttpError("HTTP 401", status=401)
+
+        with mock.patch.object(pipeline.sources, "fetch_free_dropped_domains", return_value=feed), \
+             mock.patch.object(pipeline.enrich, "fetch_openpagerank", opr), \
+             mock.patch.object(pipeline.enrich, "fetch_backlink_summary", unauthorised):
+            result = pipeline.run(conf, sender=StdoutSender(io.StringIO()), log=logs.append)
+        self.assertEqual(len(calls), 1)                      # one rejection is enough; the rest are not attempted
+        self.assertEqual(result.funnel["deep_enriched"], 0)
+        self.assertEqual(result.funnel["shortlisted"], 3)    # the run still delivers on free data
+        self.assertTrue(any("DataForSEO rejected the credentials" in line for line in logs))
+        self.assertIsNone(result.shortlist[0]["referring_domains"])
+
+        def flaky(domain, auth, **kw):
+            raise common_http.HttpError("HTTP 500", status=500)
+
+        with mock.patch.object(pipeline.sources, "fetch_free_dropped_domains", return_value=feed), \
+             mock.patch.object(pipeline.enrich, "fetch_openpagerank", opr), \
+             mock.patch.object(pipeline.enrich, "fetch_backlink_summary", flaky):
+            result = pipeline.run(conf, sender=StdoutSender(io.StringIO()), log=lambda *a, **k: None)
+        self.assertEqual(result.funnel["shortlisted"], 3)    # transient errors are per-domain and never sink the run
+
     def test_live_mode_feed_failure_exits_cleanly(self):
         conf = pipeline.DomainFlipperConfig(whoisfreaks_api_key="wf", cache_path=":memory:", audit_path=None)
         with mock.patch.object(pipeline.sources, "fetch_dropped_domains", side_effect=sources.SourceError("boom")):

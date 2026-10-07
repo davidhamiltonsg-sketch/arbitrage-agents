@@ -437,7 +437,14 @@ def _deep_enrich(conf, cache: Cache, authority: str, candidates: list[dict[str, 
             try:
                 metrics = enrich.fetch_backlink_summary(item["domain"], conf.dataforseo_auth, cache=cache, dr_divisor=conf.dr_divisor)
             except Exception as exc:
-                audit.record("enrich_error", item["domain"], error=str(exc), stage="deep")
+                audit.record("deep_enrich_error", item["domain"], error=str(exc))
+                status = getattr(exc, "status", None)
+                if status in (401, 402, 403):
+                    # Credentials or balance problem: every further call would fail the same way.
+                    log("::warning title=DataForSEO rejected the credentials::"
+                        f"HTTP {status}; deep link counts skipped this run. DATAFORSEO_LOGIN is the API login (an email) and "
+                        f"DATAFORSEO_PASSWORD the API password from app.dataforseo.com/api-access, not the account password. {exc}")
+                    break
                 log(f"[deep] {item['domain']}: {exc}")
                 continue
             item["gate_dr"] = item.get("dr")
