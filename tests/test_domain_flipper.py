@@ -164,7 +164,8 @@ class EnrichTests(unittest.TestCase):
         self.assertEqual(enrich.basic_auth_header(None, token), f"Basic {token}")
         # ...but only when it decodes to that login; otherwise it is an ordinary password.
         self.assertEqual(enrich.basic_auth_header("other@example.com", token), "Basic " + base64.b64encode(f"other@example.com:{token}".encode()).decode())
-        self.assertEqual(enrich.basic_auth_header("a", "YTpi"), "Basic " + base64.b64encode(b"a:YTpi").decode())  # decodes to a:b, login mismatch
+        self.assertEqual(enrich.basic_auth_header("a", "YTpi"), "Basic YTpi")  # decodes to a:b for login a: a token
+        self.assertEqual(enrich.basic_auth_header("x", "YTpi"), "Basic " + base64.b64encode(b"x:YTpi").decode())  # login mismatch: a password
         self.assertEqual(enrich.basic_auth_header("a", "plainpass"), "Basic " + base64.b64encode(b"a:plainpass").decode())
 
     def test_fetch_uses_cache(self):
