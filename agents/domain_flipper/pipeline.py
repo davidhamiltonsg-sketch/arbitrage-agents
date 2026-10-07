@@ -66,7 +66,7 @@ class DomainFlipperConfig:
         cfg.load_dotenv()
         log_dir = cfg.env("AUDIT_LOG_DIR", str(cfg.PROJECT_ROOT / "logs"))
         dataforseo_auth = None
-        if cfg.env("DATAFORSEO_AUTH") or (cfg.env("DATAFORSEO_LOGIN") and cfg.env("DATAFORSEO_PASSWORD")):
+        if cfg.env("DATAFORSEO_AUTH") or cfg.env("DATAFORSEO_PASSWORD"):
             dataforseo_auth = enrich.basic_auth_header(cfg.env("DATAFORSEO_LOGIN"), cfg.env("DATAFORSEO_PASSWORD"), cfg.env("DATAFORSEO_AUTH"))
         return cls(
             domain_source=(cfg.env("DOMAIN_SOURCE", "auto") or "auto").lower(),

@@ -31,8 +31,25 @@ class AuthorityGate:
     min_referring_domains: int = 5
 
 
+def _looks_like_basic_token(value: str, login: str | None) -> bool:
+    """True when ``value`` is the base64 form of ``login:password`` DataForSEO shows on its API page."""
+    try:
+        decoded = base64.b64decode(value.strip(), validate=True).decode("utf-8")
+    except (ValueError, UnicodeDecodeError):
+        return False
+    if ":" not in decoded or not decoded.isprintable():
+        return False
+    return not login or decoded.split(":", 1)[0] == login.strip()
+
+
 def basic_auth_header(login: str | None, password: str | None, raw_token: str | None = None) -> str:
-    """Build the ``Authorization: Basic`` value from login/password or a prebuilt base64 token."""
+    """Build the ``Authorization: Basic`` value from login/password or a prebuilt base64 token.
+
+    The base64 token may also be pasted into the password slot: it is recognised
+    when it decodes to ``login:password`` for the configured login.
+    """
+    if not raw_token and password and _looks_like_basic_token(password, login):
+        raw_token = password
     if raw_token:
         token = raw_token.strip()
         return token if token.lower().startswith("basic ") else f"Basic {token}"

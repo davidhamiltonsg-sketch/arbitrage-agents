@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import gzip
 import io
 import json
@@ -157,6 +158,14 @@ class EnrichTests(unittest.TestCase):
         self.assertEqual(enrich.basic_auth_header(None, None, "Basic YTpi"), "Basic YTpi")
         with self.assertRaises(enrich.EnrichmentError):
             enrich.basic_auth_header(None, None)
+        # The base64 "login:password" token pasted into the password slot is used as-is...
+        token = base64.b64encode(b"me@example.com:s3cret").decode()
+        self.assertEqual(enrich.basic_auth_header("me@example.com", token), f"Basic {token}")
+        self.assertEqual(enrich.basic_auth_header(None, token), f"Basic {token}")
+        # ...but only when it decodes to that login; otherwise it is an ordinary password.
+        self.assertEqual(enrich.basic_auth_header("other@example.com", token), "Basic " + base64.b64encode(f"other@example.com:{token}".encode()).decode())
+        self.assertEqual(enrich.basic_auth_header("a", "YTpi"), "Basic " + base64.b64encode(b"a:YTpi").decode())  # decodes to a:b, login mismatch
+        self.assertEqual(enrich.basic_auth_header("a", "plainpass"), "Basic " + base64.b64encode(b"a:plainpass").decode())
 
     def test_fetch_uses_cache(self):
         calls = []
