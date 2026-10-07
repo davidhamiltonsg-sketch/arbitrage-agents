@@ -76,6 +76,7 @@ jobs:
       - name: HumbleWorth on Replicate (needs REPLICATE_API_TOKEN)
         run: |
           if [ -z "$REPLICATE_API_TOKEN" ]; then echo "REPLICATE_API_TOKEN not set"; exit 0; fi
+          echo "token length ${#REPLICATE_API_TOKEN} (Replicate tokens are 40 characters and start with r8_); starts with r8_: $([[ "$REPLICATE_API_TOKEN" == r8_* ]] && echo yes || echo no); contains spaces or dots: $([[ "$REPLICATE_API_TOKEN" == *[\ .]* ]] && echo yes || echo no)"
           curl -sS --max-time 90 -X POST -H "Authorization: Bearer ${REPLICATE_API_TOKEN}" -H "Prefer: wait=60" -H "Content-Type: application/json" \
             -d '{"input":{"domains":"lumenpath.com,example.com"}}' -o body.txt -w "status=%{http_code}\n" \
             "https://api.replicate.com/v1/models/gregpriday/humbleworth-price/predictions" || true
