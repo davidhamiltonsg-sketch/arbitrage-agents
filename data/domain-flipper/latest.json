@@ -1,8 +1,8 @@
 {
   "agent": "domain-flipper",
-  "run_id": "20261012T150845Z-762f86",
-  "generated_at": "2026-10-12T15:09:55+00:00",
-  "date": "2026-10-11",
+  "run_id": "20261013T140112Z-ca35bb",
+  "generated_at": "2026-10-13T14:03:00+00:00",
+  "date": "2026-10-12",
   "mode": "live",
   "sources": {
     "domain": "whoisfreaks-free",
@@ -13,36 +13,35 @@
   },
   "funnel": {
     "fetched": 10000,
-    "after_filters": 2667,
+    "after_filters": 2989,
     "after_authority_gate": 5,
-    "available": 4,
-    "deep_enriched": 4,
-    "scored": 4,
-    "shortlisted": 4
+    "available": 5,
+    "deep_enriched": 0,
+    "scored": 5,
+    "shortlisted": 5
   },
   "notes": [],
-  "run_url": "https://github.com/davidhamiltonsg-sketch/arbitrage-agents/actions/runs/38268060951",
+  "run_url": "https://github.com/davidhamiltonsg-sketch/arbitrage-agents/actions/runs/38409760733",
   "shortlist": [
     {
-      "domain": "lindahuynh.com",
+      "domain": "saswatpandageorgia.com",
       "tld": "com",
       "drop_date": null,
       "registrar": null,
       "source": "whoisfreaks-free",
-      "rank": 425.0,
-      "dr": 42.5,
-      "referring_domains": 1160,
-      "total_backlinks": 121847,
-      "spam_score": 40,
-      "first_seen": "2023-11-13 09:50:33 +00:00",
-      "authority_source": "openpagerank+dataforseo",
+      "rank": 5731845,
+      "dr": 20.9,
+      "referring_domains": null,
+      "total_backlinks": null,
+      "spam_score": null,
+      "first_seen": null,
+      "authority_source": "openpagerank",
       "availability": {
         "status": "available",
         "source": "rdap",
-        "checked_at": "2026-10-12T15:08:55+00:00",
+        "checked_at": "2026-10-13T14:01:35+00:00",
         "server": "https://rdap.verisign.com/com/v1/"
       },
-      "gate_dr": 14.0,
       "appraisal": {
         "status": "denied",
         "source": "humbleworth",
@@ -50,137 +49,13 @@
         "currency": "USD",
         "comparables": [],
         "reasons": [],
-        "checked_at": "2026-10-12T15:08:57+00:00",
-        "error": "Replicate rejected REPLICATE_API_TOKEN"
-      },
-      "score": 10,
-      "brandability": 8,
-      "suggested_price": 2500,
-      "reasoning": "With a strong Domain Rating of 42.5 and over 1160 referring domains, this domain has significant link equity and is brandable, making it a prime acquisition for commercial use.",
-      "wayback": {
-        "status": "error",
-        "first_year": null,
-        "last_year": null,
-        "snapshot_months": 0,
-        "years_active": 0,
-        "latest_url": null,
-        "timeline_url": "https://web.archive.org/web/*/lindahuynh.com",
-        "checked_at": "2026-10-12T15:09:04+00:00",
-        "error": "network error for https://web.archive.org/cdx/search/cdx?url=lindahuynh.com&output=json&fl=timestamp%2Cstatuscode%2Cmimetype&filter=statuscode%3A200&collapse=timestamp%3A6&limit=2000: The read operati"
-      },
-      "trademark": {
-        "term": "lindahuynh",
-        "risk": "low",
-        "flags": [],
-        "summary": "no famous-mark match in the built-in list",
-        "links": {
-          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=lindahuynh",
-          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=lindahuynh",
-          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/lindahuynh"
-        }
-      },
-      "links": {
-        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=lindahuynh.com",
-        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=lindahuynh.com",
-        "afternic": "https://www.afternic.com/domain/lindahuynh.com"
-      }
-    },
-    {
-      "domain": "safasf.com",
-      "tld": "com",
-      "drop_date": null,
-      "registrar": null,
-      "source": "whoisfreaks-free",
-      "rank": 219.0,
-      "dr": 21.9,
-      "referring_domains": 2393,
-      "total_backlinks": 21562,
-      "spam_score": 21,
-      "first_seen": "2025-08-16 20:43:24 +00:00",
-      "authority_source": "openpagerank+dataforseo",
-      "availability": {
-        "status": "available",
-        "source": "rdap",
-        "checked_at": "2026-10-12T15:08:55+00:00",
-        "server": "https://rdap.verisign.com/com/v1/"
-      },
-      "gate_dr": 33.0,
-      "appraisal": {
-        "status": "denied",
-        "source": "humbleworth",
-        "value": null,
-        "currency": "USD",
-        "comparables": [],
-        "reasons": [],
-        "checked_at": "2026-10-12T15:08:57+00:00",
-        "error": "Replicate rejected REPLICATE_API_TOKEN"
-      },
-      "score": 8,
-      "brandability": 3,
-      "suggested_price": 800,
-      "reasoning": "Despite a low brandability score due to its awkwardness and lack of memorability, the strong backlink profile with a DR of 21.9 and 2393 referring domains provides significant link equity.",
-      "wayback": {
-        "status": "error",
-        "first_year": null,
-        "last_year": null,
-        "snapshot_months": 0,
-        "years_active": 0,
-        "latest_url": null,
-        "timeline_url": "https://web.archive.org/web/*/safasf.com",
-        "checked_at": "2026-10-12T15:09:24+00:00",
-        "error": "HTTP 503 for https://web.archive.org/cdx/search/cdx?url=safasf.com&output=json&fl=timestamp%2Cstatuscode%2Cmimetype&filter=statuscode%3A200&collapse=timestamp%3A6&limit=2000: <html><head><meta charset"
-      },
-      "trademark": {
-        "term": "safasf",
-        "risk": "low",
-        "flags": [],
-        "summary": "no famous-mark match in the built-in list",
-        "links": {
-          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=safasf",
-          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=safasf",
-          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/safasf"
-        }
-      },
-      "links": {
-        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=safasf.com",
-        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=safasf.com",
-        "afternic": "https://www.afternic.com/domain/safasf.com"
-      }
-    },
-    {
-      "domain": "ravencoinwallet.com",
-      "tld": "com",
-      "drop_date": null,
-      "registrar": null,
-      "source": "whoisfreaks-free",
-      "rank": 194.0,
-      "dr": 19.4,
-      "referring_domains": 1181,
-      "total_backlinks": 4472,
-      "spam_score": 39,
-      "first_seen": "2025-08-27 00:27:11 +00:00",
-      "authority_source": "openpagerank+dataforseo",
-      "availability": {
-        "status": "available",
-        "source": "rdap",
-        "checked_at": "2026-10-12T15:08:55+00:00",
-        "server": "https://rdap.verisign.com/com/v1/"
-      },
-      "gate_dr": 14.7,
-      "appraisal": {
-        "status": "denied",
-        "source": "humbleworth",
-        "value": null,
-        "currency": "USD",
-        "comparables": [],
-        "reasons": [],
-        "checked_at": "2026-10-12T15:08:57+00:00",
+        "checked_at": "2026-10-13T14:01:37+00:00",
         "error": "Replicate rejected REPLICATE_API_TOKEN"
       },
       "score": 6,
-      "brandability": 7,
-      "suggested_price": 800,
-      "reasoning": "The domain has strong link equity with a high number of referring domains, but its brandability is slightly hindered by its length and complexity.",
+      "brandability": 5,
+      "suggested_price": 500,
+      "reasoning": "The domain has moderate brandability but lacks strong backlink metrics, limiting its commercial appeal.",
       "wayback": {
         "status": "error",
         "first_year": null,
@@ -188,47 +63,46 @@
         "snapshot_months": 0,
         "years_active": 0,
         "latest_url": null,
-        "timeline_url": "https://web.archive.org/web/*/ravencoinwallet.com",
-        "checked_at": "2026-10-12T15:09:29+00:00",
-        "error": "HTTP 503 for https://web.archive.org/cdx/search/cdx?url=ravencoinwallet.com&output=json&fl=timestamp%2Cstatuscode%2Cmimetype&filter=statuscode%3A200&collapse=timestamp%3A6&limit=2000: <html><head><met"
+        "timeline_url": "https://web.archive.org/web/*/saswatpandageorgia.com",
+        "checked_at": "2026-10-13T14:01:46+00:00",
+        "error": "network error for https://web.archive.org/cdx/search/cdx?url=saswatpandageorgia.com&output=json&fl=timestamp%2Cstatuscode%2Cmimetype&filter=statuscode%3A200&collapse=timestamp%3A6&limit=2000: The read"
       },
       "trademark": {
-        "term": "ravencoinwallet",
+        "term": "saswatpandageorgia",
         "risk": "low",
         "flags": [],
         "summary": "no famous-mark match in the built-in list",
         "links": {
-          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=ravencoinwallet",
-          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=ravencoinwallet",
-          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/ravencoinwallet"
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=saswatpandageorgia",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=saswatpandageorgia",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/saswatpandageorgia"
         }
       },
       "links": {
-        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=ravencoinwallet.com",
-        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=ravencoinwallet.com",
-        "afternic": "https://www.afternic.com/domain/ravencoinwallet.com"
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=saswatpandageorgia.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=saswatpandageorgia.com",
+        "afternic": "https://www.afternic.com/domain/saswatpandageorgia.com"
       }
     },
     {
-      "domain": "cybertrontv.com",
+      "domain": "tashmahalotel.com",
       "tld": "com",
       "drop_date": null,
       "registrar": null,
       "source": "whoisfreaks-free",
-      "rank": 81.0,
-      "dr": 8.1,
-      "referring_domains": 1162,
-      "total_backlinks": 1206,
-      "spam_score": 50,
-      "first_seen": "2023-08-30 06:13:49 +00:00",
-      "authority_source": "openpagerank+dataforseo",
+      "rank": 38803091,
+      "dr": 11.6,
+      "referring_domains": null,
+      "total_backlinks": null,
+      "spam_score": null,
+      "first_seen": null,
+      "authority_source": "openpagerank",
       "availability": {
         "status": "available",
         "source": "rdap",
-        "checked_at": "2026-10-12T15:08:55+00:00",
+        "checked_at": "2026-10-13T14:01:36+00:00",
         "server": "https://rdap.verisign.com/com/v1/"
       },
-      "gate_dr": 10.8,
       "appraisal": {
         "status": "denied",
         "source": "humbleworth",
@@ -236,13 +110,133 @@
         "currency": "USD",
         "comparables": [],
         "reasons": [],
-        "checked_at": "2026-10-12T15:08:57+00:00",
+        "checked_at": "2026-10-13T14:01:37+00:00",
+        "error": "Replicate rejected REPLICATE_API_TOKEN"
+      },
+      "score": 5,
+      "brandability": 6,
+      "suggested_price": 600,
+      "reasoning": "The domain has moderate brandability due to its phonetic appeal and relevance to the hospitality industry, but its low DR indicates limited backlink equity.",
+      "wayback": {
+        "status": "ok",
+        "first_year": 2007,
+        "last_year": 2025,
+        "snapshot_months": 72,
+        "years_active": 16,
+        "latest_url": "https://web.archive.org/web/20250913020819/tashmahalotel.com",
+        "timeline_url": "https://web.archive.org/web/*/tashmahalotel.com",
+        "checked_at": "2026-10-13T14:02:06+00:00"
+      },
+      "trademark": {
+        "term": "tashmahalotel",
+        "risk": "low",
+        "flags": [],
+        "summary": "no famous-mark match in the built-in list",
+        "links": {
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=tashmahalotel",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=tashmahalotel",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/tashmahalotel"
+        }
+      },
+      "links": {
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=tashmahalotel.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=tashmahalotel.com",
+        "afternic": "https://www.afternic.com/domain/tashmahalotel.com"
+      }
+    },
+    {
+      "domain": "chainkitwp.com",
+      "tld": "com",
+      "drop_date": null,
+      "registrar": null,
+      "source": "whoisfreaks-free",
+      "rank": 1455754,
+      "dr": 11.1,
+      "referring_domains": null,
+      "total_backlinks": null,
+      "spam_score": null,
+      "first_seen": null,
+      "authority_source": "openpagerank",
+      "availability": {
+        "status": "available",
+        "source": "rdap",
+        "checked_at": "2026-10-13T14:01:36+00:00",
+        "server": "https://rdap.verisign.com/com/v1/"
+      },
+      "appraisal": {
+        "status": "denied",
+        "source": "humbleworth",
+        "value": null,
+        "currency": "USD",
+        "comparables": [],
+        "reasons": [],
+        "checked_at": "2026-10-13T14:01:37+00:00",
         "error": "Replicate rejected REPLICATE_API_TOKEN"
       },
       "score": 5,
       "brandability": 6,
       "suggested_price": 500,
-      "reasoning": "Despite a low Domain Rating, the high number of referring domains suggests some level of authority, while the brandability is moderate due to the length and complexity of the name.",
+      "reasoning": "The domain has a low DR and unknown backlink metrics, but its pronounceable nature and potential niche appeal provide moderate brandability.",
+      "wayback": {
+        "status": "ok",
+        "first_year": 2025,
+        "last_year": 2025,
+        "snapshot_months": 1,
+        "years_active": 1,
+        "latest_url": "https://web.archive.org/web/20250816201424/chainkitwp.com",
+        "timeline_url": "https://web.archive.org/web/*/chainkitwp.com",
+        "checked_at": "2026-10-13T14:02:22+00:00"
+      },
+      "trademark": {
+        "term": "chainkitwp",
+        "risk": "low",
+        "flags": [],
+        "summary": "no famous-mark match in the built-in list",
+        "links": {
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=chainkitwp",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=chainkitwp",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/chainkitwp"
+        }
+      },
+      "links": {
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=chainkitwp.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=chainkitwp.com",
+        "afternic": "https://www.afternic.com/domain/chainkitwp.com"
+      }
+    },
+    {
+      "domain": "junqijiqi.com",
+      "tld": "com",
+      "drop_date": null,
+      "registrar": null,
+      "source": "whoisfreaks-free",
+      "rank": 48564802,
+      "dr": 10.9,
+      "referring_domains": null,
+      "total_backlinks": null,
+      "spam_score": null,
+      "first_seen": null,
+      "authority_source": "openpagerank",
+      "availability": {
+        "status": "available",
+        "source": "rdap",
+        "checked_at": "2026-10-13T14:01:36+00:00",
+        "server": "https://rdap.verisign.com/com/v1/"
+      },
+      "appraisal": {
+        "status": "denied",
+        "source": "humbleworth",
+        "value": null,
+        "currency": "USD",
+        "comparables": [],
+        "reasons": [],
+        "checked_at": "2026-10-13T14:01:37+00:00",
+        "error": "Replicate rejected REPLICATE_API_TOKEN"
+      },
+      "score": 4,
+      "brandability": 5,
+      "suggested_price": 300,
+      "reasoning": "The domain has a low DR and lacks known referring domains, which limits its link equity, while its brandability is moderate due to its pronounceability.",
       "wayback": {
         "status": "error",
         "first_year": null,
@@ -250,25 +244,86 @@
         "snapshot_months": 0,
         "years_active": 0,
         "latest_url": null,
-        "timeline_url": "https://web.archive.org/web/*/cybertrontv.com",
-        "checked_at": "2026-10-12T15:09:34+00:00",
-        "error": "network error for https://web.archive.org/cdx/search/cdx?url=cybertrontv.com&output=json&fl=timestamp%2Cstatuscode%2Cmimetype&filter=statuscode%3A200&collapse=timestamp%3A6&limit=2000: The read operat"
+        "timeline_url": "https://web.archive.org/web/*/junqijiqi.com",
+        "checked_at": "2026-10-13T14:02:29+00:00",
+        "error": "network error for https://web.archive.org/cdx/search/cdx?url=junqijiqi.com&output=json&fl=timestamp%2Cstatuscode%2Cmimetype&filter=statuscode%3A200&collapse=timestamp%3A6&limit=2000: <urlopen error [E"
       },
       "trademark": {
-        "term": "cybertrontv",
+        "term": "junqijiqi",
         "risk": "low",
         "flags": [],
         "summary": "no famous-mark match in the built-in list",
         "links": {
-          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=cybertrontv",
-          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=cybertrontv",
-          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/cybertrontv"
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=junqijiqi",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=junqijiqi",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/junqijiqi"
         }
       },
       "links": {
-        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=cybertrontv.com",
-        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=cybertrontv.com",
-        "afternic": "https://www.afternic.com/domain/cybertrontv.com"
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=junqijiqi.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=junqijiqi.com",
+        "afternic": "https://www.afternic.com/domain/junqijiqi.com"
+      }
+    },
+    {
+      "domain": "jslongjiu.com",
+      "tld": "com",
+      "drop_date": null,
+      "registrar": null,
+      "source": "whoisfreaks-free",
+      "rank": 48564795,
+      "dr": 10.9,
+      "referring_domains": null,
+      "total_backlinks": null,
+      "spam_score": null,
+      "first_seen": null,
+      "authority_source": "openpagerank",
+      "availability": {
+        "status": "available",
+        "source": "rdap",
+        "checked_at": "2026-10-13T14:01:36+00:00",
+        "server": "https://rdap.verisign.com/com/v1/"
+      },
+      "appraisal": {
+        "status": "denied",
+        "source": "humbleworth",
+        "value": null,
+        "currency": "USD",
+        "comparables": [],
+        "reasons": [],
+        "checked_at": "2026-10-13T14:01:37+00:00",
+        "error": "Replicate rejected REPLICATE_API_TOKEN"
+      },
+      "score": 4,
+      "brandability": 5,
+      "suggested_price": 300,
+      "reasoning": "The domain has a low DR and lacks known referring domains, but it has moderate brandability potential.",
+      "wayback": {
+        "status": "error",
+        "first_year": null,
+        "last_year": null,
+        "snapshot_months": 0,
+        "years_active": 0,
+        "latest_url": null,
+        "timeline_url": "https://web.archive.org/web/*/jslongjiu.com",
+        "checked_at": "2026-10-13T14:02:45+00:00",
+        "error": "network error for https://web.archive.org/cdx/search/cdx?url=jslongjiu.com&output=json&fl=timestamp%2Cstatuscode%2Cmimetype&filter=statuscode%3A200&collapse=timestamp%3A6&limit=2000: <urlopen error [E"
+      },
+      "trademark": {
+        "term": "jslongjiu",
+        "risk": "low",
+        "flags": [],
+        "summary": "no famous-mark match in the built-in list",
+        "links": {
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=jslongjiu",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=jslongjiu",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/jslongjiu"
+        }
+      },
+      "links": {
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=jslongjiu.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=jslongjiu.com",
+        "afternic": "https://www.afternic.com/domain/jslongjiu.com"
       }
     }
   ]
