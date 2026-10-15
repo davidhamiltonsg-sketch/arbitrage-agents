@@ -1,8 +1,8 @@
 {
   "agent": "domain-flipper",
-  "run_id": "20261014T113752Z-72dce3",
-  "generated_at": "2026-10-14T11:38:53+00:00",
-  "date": "2026-10-13",
+  "run_id": "20261015T111641Z-59b30b",
+  "generated_at": "2026-10-15T11:17:35+00:00",
+  "date": "2026-10-14",
   "mode": "live",
   "sources": {
     "domain": "whoisfreaks-free",
@@ -13,83 +13,23 @@
   },
   "funnel": {
     "fetched": 10000,
-    "after_filters": 3042,
-    "after_authority_gate": 7,
-    "available": 7,
+    "after_filters": 3627,
+    "after_authority_gate": 3,
+    "available": 3,
     "deep_enriched": 0,
-    "scored": 7,
-    "shortlisted": 5
+    "scored": 3,
+    "shortlisted": 3
   },
   "notes": [],
-  "run_url": "https://github.com/davidhamiltonsg-sketch/arbitrage-agents/actions/runs/38557908381",
+  "run_url": "https://github.com/davidhamiltonsg-sketch/arbitrage-agents/actions/runs/38726164457",
   "shortlist": [
     {
-      "domain": "tarjomehsho.com",
+      "domain": "creativethatconnects.com",
       "tld": "com",
       "drop_date": null,
       "registrar": null,
       "source": "whoisfreaks-free",
-      "rank": 34090477,
-      "dr": 15.3,
-      "referring_domains": null,
-      "total_backlinks": null,
-      "spam_score": null,
-      "first_seen": null,
-      "authority_source": "openpagerank",
-      "availability": {
-        "status": "available",
-        "source": "rdap",
-        "checked_at": "2026-10-14T11:38:03+00:00",
-        "server": "https://rdap.verisign.com/com/v1/"
-      },
-      "appraisal": {
-        "status": "denied",
-        "source": "humbleworth",
-        "value": null,
-        "currency": "USD",
-        "comparables": [],
-        "reasons": [],
-        "checked_at": "2026-10-14T11:38:04+00:00",
-        "error": "Replicate rejected REPLICATE_API_TOKEN"
-      },
-      "score": 5,
-      "brandability": 6,
-      "suggested_price": 600,
-      "reasoning": "The domain has moderate brandability with a pronounceable structure, but its low DR and unknown backlink profile limit its overall investment potential.",
-      "wayback": {
-        "status": "ok",
-        "first_year": 2019,
-        "last_year": 2025,
-        "snapshot_months": 24,
-        "years_active": 6,
-        "latest_url": "https://web.archive.org/web/20250408235052/tarjomehsho.com",
-        "timeline_url": "https://web.archive.org/web/*/tarjomehsho.com",
-        "checked_at": "2026-10-14T11:38:14+00:00"
-      },
-      "trademark": {
-        "term": "tarjomehsho",
-        "risk": "low",
-        "flags": [],
-        "summary": "no famous-mark match in the built-in list",
-        "links": {
-          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=tarjomehsho",
-          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=tarjomehsho",
-          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/tarjomehsho"
-        }
-      },
-      "links": {
-        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=tarjomehsho.com",
-        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=tarjomehsho.com",
-        "afternic": "https://www.afternic.com/domain/tarjomehsho.com"
-      }
-    },
-    {
-      "domain": "mycologicalmarket.com",
-      "tld": "com",
-      "drop_date": null,
-      "registrar": null,
-      "source": "whoisfreaks-free",
-      "rank": 13511483,
+      "rank": 2140082,
       "dr": 16.7,
       "referring_domains": null,
       "total_backlinks": null,
@@ -99,7 +39,7 @@
       "availability": {
         "status": "available",
         "source": "rdap",
-        "checked_at": "2026-10-14T11:38:03+00:00",
+        "checked_at": "2026-10-15T11:17:06+00:00",
         "server": "https://rdap.verisign.com/com/v1/"
       },
       "appraisal": {
@@ -109,48 +49,49 @@
         "currency": "USD",
         "comparables": [],
         "reasons": [],
-        "checked_at": "2026-10-14T11:38:04+00:00",
+        "checked_at": "2026-10-15T11:17:06+00:00",
         "error": "Replicate rejected REPLICATE_API_TOKEN"
       },
       "score": 5,
       "brandability": 7,
       "suggested_price": 600,
-      "reasoning": "The domain has moderate brandability with a clear niche focus on mycology, but its low DR indicates limited link equity.",
+      "reasoning": "The domain has moderate brandability with a clear message, but its low DR and unknown backlink profile limit its overall investment potential.",
       "wayback": {
-        "status": "ok",
-        "first_year": 2024,
-        "last_year": 2025,
-        "snapshot_months": 9,
-        "years_active": 2,
-        "latest_url": "https://web.archive.org/web/20250810190151/mycologicalmarket.com",
-        "timeline_url": "https://web.archive.org/web/*/mycologicalmarket.com",
-        "checked_at": "2026-10-14T11:38:17+00:00"
+        "status": "error",
+        "first_year": null,
+        "last_year": null,
+        "snapshot_months": 0,
+        "years_active": 0,
+        "latest_url": null,
+        "timeline_url": "https://web.archive.org/web/*/creativethatconnects.com",
+        "checked_at": "2026-10-15T11:17:12+00:00",
+        "error": "network error for https://web.archive.org/cdx/search/cdx?url=creativethatconnects.com&output=json&fl=timestamp%2Cstatuscode%2Cmimetype&filter=statuscode%3A200&collapse=timestamp%3A6&limit=2000: The re"
       },
       "trademark": {
-        "term": "mycologicalmarket",
+        "term": "creativethatconnects",
         "risk": "low",
         "flags": [],
         "summary": "no famous-mark match in the built-in list",
         "links": {
-          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=mycologicalmarket",
-          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=mycologicalmarket",
-          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/mycologicalmarket"
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=creativethatconnects",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=creativethatconnects",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/creativethatconnects"
         }
       },
       "links": {
-        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=mycologicalmarket.com",
-        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=mycologicalmarket.com",
-        "afternic": "https://www.afternic.com/domain/mycologicalmarket.com"
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=creativethatconnects.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=creativethatconnects.com",
+        "afternic": "https://www.afternic.com/domain/creativethatconnects.com"
       }
     },
     {
-      "domain": "gurikaur.com",
+      "domain": "etherjammer.com",
       "tld": "com",
       "drop_date": null,
       "registrar": null,
       "source": "whoisfreaks-free",
-      "rank": 11847414,
-      "dr": 14.2,
+      "rank": 12200684,
+      "dr": 16.4,
       "referring_domains": null,
       "total_backlinks": null,
       "spam_score": null,
@@ -159,7 +100,7 @@
       "availability": {
         "status": "available",
         "source": "rdap",
-        "checked_at": "2026-10-14T11:38:03+00:00",
+        "checked_at": "2026-10-15T11:17:05+00:00",
         "server": "https://rdap.verisign.com/com/v1/"
       },
       "appraisal": {
@@ -169,47 +110,47 @@
         "currency": "USD",
         "comparables": [],
         "reasons": [],
-        "checked_at": "2026-10-14T11:38:04+00:00",
+        "checked_at": "2026-10-15T11:17:06+00:00",
         "error": "Replicate rejected REPLICATE_API_TOKEN"
       },
       "score": 5,
-      "brandability": 7,
+      "brandability": 6,
       "suggested_price": 600,
-      "reasoning": "The domain has moderate brandability with a unique sound, but its low DR indicates limited backlink equity.",
+      "reasoning": "The domain has moderate brandability potential but lacks sufficient backlink equity to command a higher value.",
       "wayback": {
         "status": "ok",
-        "first_year": 2018,
-        "last_year": 2025,
-        "snapshot_months": 7,
-        "years_active": 2,
-        "latest_url": "https://web.archive.org/web/20251215090630/gurikaur.com",
-        "timeline_url": "https://web.archive.org/web/*/gurikaur.com",
-        "checked_at": "2026-10-14T11:38:22+00:00"
+        "first_year": 2007,
+        "last_year": 2024,
+        "snapshot_months": 18,
+        "years_active": 9,
+        "latest_url": "https://web.archive.org/web/20240706220758/etherjammer.com",
+        "timeline_url": "https://web.archive.org/web/*/etherjammer.com",
+        "checked_at": "2026-10-15T11:17:32+00:00"
       },
       "trademark": {
-        "term": "gurikaur",
+        "term": "etherjammer",
         "risk": "low",
         "flags": [],
         "summary": "no famous-mark match in the built-in list",
         "links": {
-          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=gurikaur",
-          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=gurikaur",
-          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/gurikaur"
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=etherjammer",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=etherjammer",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/etherjammer"
         }
       },
       "links": {
-        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=gurikaur.com",
-        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=gurikaur.com",
-        "afternic": "https://www.afternic.com/domain/gurikaur.com"
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=etherjammer.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=etherjammer.com",
+        "afternic": "https://www.afternic.com/domain/etherjammer.com"
       }
     },
     {
-      "domain": "mymetrowestrealty.com",
+      "domain": "patterndenver.com",
       "tld": "com",
       "drop_date": null,
       "registrar": null,
       "source": "whoisfreaks-free",
-      "rank": 32463836,
+      "rank": 905264,
       "dr": 12.7,
       "referring_domains": null,
       "total_backlinks": null,
@@ -219,7 +160,7 @@
       "availability": {
         "status": "available",
         "source": "rdap",
-        "checked_at": "2026-10-14T11:38:03+00:00",
+        "checked_at": "2026-10-15T11:17:06+00:00",
         "server": "https://rdap.verisign.com/com/v1/"
       },
       "appraisal": {
@@ -229,99 +170,38 @@
         "currency": "USD",
         "comparables": [],
         "reasons": [],
-        "checked_at": "2026-10-14T11:38:04+00:00",
-        "error": "Replicate rejected REPLICATE_API_TOKEN"
-      },
-      "score": 5,
-      "brandability": 6,
-      "suggested_price": 600,
-      "reasoning": "The domain has moderate brandability but lacks strong backlink equity, limiting its commercial appeal.",
-      "wayback": {
-        "status": "ok",
-        "first_year": 2010,
-        "last_year": 2025,
-        "snapshot_months": 23,
-        "years_active": 9,
-        "latest_url": "https://web.archive.org/web/20250914081949/mymetrowestrealty.com",
-        "timeline_url": "https://web.archive.org/web/*/mymetrowestrealty.com",
-        "checked_at": "2026-10-14T11:38:29+00:00"
-      },
-      "trademark": {
-        "term": "mymetrowestrealty",
-        "risk": "low",
-        "flags": [],
-        "summary": "no famous-mark match in the built-in list",
-        "links": {
-          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=mymetrowestrealty",
-          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=mymetrowestrealty",
-          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/mymetrowestrealty"
-        }
-      },
-      "links": {
-        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=mymetrowestrealty.com",
-        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=mymetrowestrealty.com",
-        "afternic": "https://www.afternic.com/domain/mymetrowestrealty.com"
-      }
-    },
-    {
-      "domain": "kundalinidocumentary.com",
-      "tld": "com",
-      "drop_date": null,
-      "registrar": null,
-      "source": "whoisfreaks-free",
-      "rank": 36958760,
-      "dr": 11.6,
-      "referring_domains": null,
-      "total_backlinks": null,
-      "spam_score": null,
-      "first_seen": null,
-      "authority_source": "openpagerank",
-      "availability": {
-        "status": "available",
-        "source": "rdap",
-        "checked_at": "2026-10-14T11:38:03+00:00",
-        "server": "https://rdap.verisign.com/com/v1/"
-      },
-      "appraisal": {
-        "status": "denied",
-        "source": "humbleworth",
-        "value": null,
-        "currency": "USD",
-        "comparables": [],
-        "reasons": [],
-        "checked_at": "2026-10-14T11:38:04+00:00",
+        "checked_at": "2026-10-15T11:17:06+00:00",
         "error": "Replicate rejected REPLICATE_API_TOKEN"
       },
       "score": 5,
       "brandability": 6,
       "suggested_price": 500,
-      "reasoning": "The domain has moderate brandability with a clear niche focus, but its low DR and unknown backlink profile limit its overall value.",
+      "reasoning": "The domain has moderate brandability potential with a clear geographic identifier, but its low DR suggests limited backlink equity.",
       "wayback": {
-        "status": "error",
-        "first_year": null,
-        "last_year": null,
-        "snapshot_months": 0,
-        "years_active": 0,
-        "latest_url": null,
-        "timeline_url": "https://web.archive.org/web/*/kundalinidocumentary.com",
-        "checked_at": "2026-10-14T11:38:33+00:00",
-        "error": "network error for https://web.archive.org/cdx/search/cdx?url=kundalinidocumentary.com&output=json&fl=timestamp%2Cstatuscode%2Cmimetype&filter=statuscode%3A200&collapse=timestamp%3A6&limit=2000: <urlop"
+        "status": "ok",
+        "first_year": 2019,
+        "last_year": 2025,
+        "snapshot_months": 44,
+        "years_active": 7,
+        "latest_url": "https://web.archive.org/web/20250811012642/patterndenver.com",
+        "timeline_url": "https://web.archive.org/web/*/patterndenver.com",
+        "checked_at": "2026-10-15T11:17:34+00:00"
       },
       "trademark": {
-        "term": "kundalinidocumentary",
+        "term": "patterndenver",
         "risk": "low",
         "flags": [],
         "summary": "no famous-mark match in the built-in list",
         "links": {
-          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=kundalinidocumentary",
-          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=kundalinidocumentary",
-          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/kundalinidocumentary"
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=patterndenver",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=patterndenver",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/patterndenver"
         }
       },
       "links": {
-        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=kundalinidocumentary.com",
-        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=kundalinidocumentary.com",
-        "afternic": "https://www.afternic.com/domain/kundalinidocumentary.com"
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=patterndenver.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=patterndenver.com",
+        "afternic": "https://www.afternic.com/domain/patterndenver.com"
       }
     }
   ]
