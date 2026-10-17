@@ -1,0 +1,332 @@
+{
+  "agent": "domain-flipper",
+  "run_id": "20261017T102954Z-6bd4ac",
+  "generated_at": "2026-10-17T10:31:41+00:00",
+  "date": "2026-10-16",
+  "mode": "live",
+  "sources": {
+    "domain": "whoisfreaks-free",
+    "authority": "openpagerank",
+    "deep_authority": "dataforseo",
+    "availability": "rdap",
+    "appraisal": "humbleworth"
+  },
+  "funnel": {
+    "fetched": 10000,
+    "after_filters": 3652,
+    "after_authority_gate": 5,
+    "available": 5,
+    "deep_enriched": 0,
+    "scored": 5,
+    "shortlisted": 5
+  },
+  "notes": [],
+  "run_url": "https://github.com/davidhamiltonsg-sketch/arbitrage-agents/actions/runs/39025105167",
+  "shortlist": [
+    {
+      "domain": "uniquementenpagne.com",
+      "tld": "com",
+      "drop_date": null,
+      "registrar": null,
+      "source": "whoisfreaks-free",
+      "rank": 38187798,
+      "dr": 16.1,
+      "referring_domains": null,
+      "total_backlinks": null,
+      "spam_score": null,
+      "first_seen": null,
+      "authority_source": "openpagerank",
+      "availability": {
+        "status": "available",
+        "source": "rdap",
+        "checked_at": "2026-10-17T10:30:07+00:00",
+        "server": "https://rdap.verisign.com/com/v1/"
+      },
+      "appraisal": {
+        "status": "denied",
+        "source": "humbleworth",
+        "value": null,
+        "currency": "USD",
+        "comparables": [],
+        "reasons": [],
+        "checked_at": "2026-10-17T10:30:07+00:00",
+        "error": "Replicate rejected REPLICATE_API_TOKEN"
+      },
+      "score": 5,
+      "brandability": 6,
+      "suggested_price": 500,
+      "reasoning": "The domain has moderate brandability but lacks strong backlink equity, making it a decent investment for niche markets.",
+      "wayback": {
+        "status": "error",
+        "first_year": null,
+        "last_year": null,
+        "snapshot_months": 0,
+        "years_active": 0,
+        "latest_url": null,
+        "timeline_url": "https://web.archive.org/web/*/uniquementenpagne.com",
+        "checked_at": "2026-10-17T10:30:15+00:00",
+        "error": "HTTP 503 for https://web.archive.org/cdx/search/cdx?url=uniquementenpagne.com&output=json&fl=timestamp%2Cstatuscode%2Cmimetype&filter=statuscode%3A200&collapse=timestamp%3A6&limit=2000: <html><head><m"
+      },
+      "trademark": {
+        "term": "uniquementenpagne",
+        "risk": "low",
+        "flags": [],
+        "summary": "no famous-mark match in the built-in list",
+        "links": {
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=uniquementenpagne",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=uniquementenpagne",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/uniquementenpagne"
+        }
+      },
+      "links": {
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=uniquementenpagne.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=uniquementenpagne.com",
+        "afternic": "https://www.afternic.com/domain/uniquementenpagne.com"
+      }
+    },
+    {
+      "domain": "bildodough.com",
+      "tld": "com",
+      "drop_date": null,
+      "registrar": null,
+      "source": "whoisfreaks-free",
+      "rank": 50514126,
+      "dr": 10.3,
+      "referring_domains": null,
+      "total_backlinks": null,
+      "spam_score": null,
+      "first_seen": null,
+      "authority_source": "openpagerank",
+      "availability": {
+        "status": "available",
+        "source": "rdap",
+        "checked_at": "2026-10-17T10:30:07+00:00",
+        "server": "https://rdap.verisign.com/com/v1/"
+      },
+      "appraisal": {
+        "status": "denied",
+        "source": "humbleworth",
+        "value": null,
+        "currency": "USD",
+        "comparables": [],
+        "reasons": [],
+        "checked_at": "2026-10-17T10:30:07+00:00",
+        "error": "Replicate rejected REPLICATE_API_TOKEN"
+      },
+      "score": 4,
+      "brandability": 5,
+      "suggested_price": 400,
+      "reasoning": "The domain has a low DR and lacks known referring domains, but its phonetic appeal offers moderate brand potential.",
+      "wayback": {
+        "status": "error",
+        "first_year": null,
+        "last_year": null,
+        "snapshot_months": 0,
+        "years_active": 0,
+        "latest_url": null,
+        "timeline_url": "https://web.archive.org/web/*/bildodough.com",
+        "checked_at": "2026-10-17T10:30:20+00:00",
+        "error": "network error for https://web.archive.org/cdx/search/cdx?url=bildodough.com&output=json&fl=timestamp%2Cstatuscode%2Cmimetype&filter=statuscode%3A200&collapse=timestamp%3A6&limit=2000: The read operati"
+      },
+      "trademark": {
+        "term": "bildodough",
+        "risk": "low",
+        "flags": [],
+        "summary": "no famous-mark match in the built-in list",
+        "links": {
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=bildodough",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=bildodough",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/bildodough"
+        }
+      },
+      "links": {
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=bildodough.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=bildodough.com",
+        "afternic": "https://www.afternic.com/domain/bildodough.com"
+      }
+    },
+    {
+      "domain": "shengtianfs.com",
+      "tld": "com",
+      "drop_date": null,
+      "registrar": null,
+      "source": "whoisfreaks-free",
+      "rank": 48566457,
+      "dr": 10.9,
+      "referring_domains": null,
+      "total_backlinks": null,
+      "spam_score": null,
+      "first_seen": null,
+      "authority_source": "openpagerank",
+      "availability": {
+        "status": "available",
+        "source": "rdap",
+        "checked_at": "2026-10-17T10:30:07+00:00",
+        "server": "https://rdap.verisign.com/com/v1/"
+      },
+      "appraisal": {
+        "status": "denied",
+        "source": "humbleworth",
+        "value": null,
+        "currency": "USD",
+        "comparables": [],
+        "reasons": [],
+        "checked_at": "2026-10-17T10:30:07+00:00",
+        "error": "Replicate rejected REPLICATE_API_TOKEN"
+      },
+      "score": 4,
+      "brandability": 5,
+      "suggested_price": 300,
+      "reasoning": "The domain has a low DR and lacks known referring domains, which limits its link equity, while its brandability is moderate due to its pronounceability.",
+      "wayback": {
+        "status": "error",
+        "first_year": null,
+        "last_year": null,
+        "snapshot_months": 0,
+        "years_active": 0,
+        "latest_url": null,
+        "timeline_url": "https://web.archive.org/web/*/shengtianfs.com",
+        "checked_at": "2026-10-17T10:30:41+00:00",
+        "error": "network error for https://web.archive.org/cdx/search/cdx?url=shengtianfs.com&output=json&fl=timestamp%2Cstatuscode%2Cmimetype&filter=statuscode%3A200&collapse=timestamp%3A6&limit=2000: <urlopen error "
+      },
+      "trademark": {
+        "term": "shengtianfs",
+        "risk": "low",
+        "flags": [],
+        "summary": "no famous-mark match in the built-in list",
+        "links": {
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=shengtianfs",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=shengtianfs",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/shengtianfs"
+        }
+      },
+      "links": {
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=shengtianfs.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=shengtianfs.com",
+        "afternic": "https://www.afternic.com/domain/shengtianfs.com"
+      }
+    },
+    {
+      "domain": "putaojidi.com",
+      "tld": "com",
+      "drop_date": null,
+      "registrar": null,
+      "source": "whoisfreaks-free",
+      "rank": 48565916,
+      "dr": 10.9,
+      "referring_domains": null,
+      "total_backlinks": null,
+      "spam_score": null,
+      "first_seen": null,
+      "authority_source": "openpagerank",
+      "availability": {
+        "status": "available",
+        "source": "rdap",
+        "checked_at": "2026-10-17T10:30:07+00:00",
+        "server": "https://rdap.verisign.com/com/v1/"
+      },
+      "appraisal": {
+        "status": "denied",
+        "source": "humbleworth",
+        "value": null,
+        "currency": "USD",
+        "comparables": [],
+        "reasons": [],
+        "checked_at": "2026-10-17T10:30:07+00:00",
+        "error": "Replicate rejected REPLICATE_API_TOKEN"
+      },
+      "score": 4,
+      "brandability": 5,
+      "suggested_price": 300,
+      "reasoning": "The domain has a low DR and lacks known referring domains, which diminishes its link equity, while its brandability is moderate due to its pronounceability.",
+      "wayback": {
+        "status": "error",
+        "first_year": null,
+        "last_year": null,
+        "snapshot_months": 0,
+        "years_active": 0,
+        "latest_url": null,
+        "timeline_url": "https://web.archive.org/web/*/putaojidi.com",
+        "checked_at": "2026-10-17T10:31:01+00:00",
+        "error": "network error for https://web.archive.org/cdx/search/cdx?url=putaojidi.com&output=json&fl=timestamp%2Cstatuscode%2Cmimetype&filter=statuscode%3A200&collapse=timestamp%3A6&limit=2000: <urlopen error ti"
+      },
+      "trademark": {
+        "term": "putaojidi",
+        "risk": "low",
+        "flags": [],
+        "summary": "no famous-mark match in the built-in list",
+        "links": {
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=putaojidi",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=putaojidi",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/putaojidi"
+        }
+      },
+      "links": {
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=putaojidi.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=putaojidi.com",
+        "afternic": "https://www.afternic.com/domain/putaojidi.com"
+      }
+    },
+    {
+      "domain": "yhjyhf.com",
+      "tld": "com",
+      "drop_date": null,
+      "registrar": null,
+      "source": "whoisfreaks-free",
+      "rank": 48567610,
+      "dr": 10.9,
+      "referring_domains": null,
+      "total_backlinks": null,
+      "spam_score": null,
+      "first_seen": null,
+      "authority_source": "openpagerank",
+      "availability": {
+        "status": "available",
+        "source": "rdap",
+        "checked_at": "2026-10-17T10:30:07+00:00",
+        "server": "https://rdap.verisign.com/com/v1/"
+      },
+      "appraisal": {
+        "status": "denied",
+        "source": "humbleworth",
+        "value": null,
+        "currency": "USD",
+        "comparables": [],
+        "reasons": [],
+        "checked_at": "2026-10-17T10:30:07+00:00",
+        "error": "Replicate rejected REPLICATE_API_TOKEN"
+      },
+      "score": 3,
+      "brandability": 2,
+      "suggested_price": 300,
+      "reasoning": "The domain yhjyhf.com has a low DR of 10.9, lacks referring domains, and is not brandable due to its awkward combination of letters.",
+      "wayback": {
+        "status": "error",
+        "first_year": null,
+        "last_year": null,
+        "snapshot_months": 0,
+        "years_active": 0,
+        "latest_url": null,
+        "timeline_url": "https://web.archive.org/web/*/yhjyhf.com",
+        "checked_at": "2026-10-17T10:31:21+00:00",
+        "error": "network error for https://web.archive.org/cdx/search/cdx?url=yhjyhf.com&output=json&fl=timestamp%2Cstatuscode%2Cmimetype&filter=statuscode%3A200&collapse=timestamp%3A6&limit=2000: <urlopen error timed"
+      },
+      "trademark": {
+        "term": "yhjyhf",
+        "risk": "low",
+        "flags": [],
+        "summary": "no famous-mark match in the built-in list",
+        "links": {
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=yhjyhf",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=yhjyhf",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/yhjyhf"
+        }
+      },
+      "links": {
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=yhjyhf.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=yhjyhf.com",
+        "afternic": "https://www.afternic.com/domain/yhjyhf.com"
+      }
+    }
+  ]
+}
