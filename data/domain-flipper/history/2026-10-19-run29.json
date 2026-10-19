@@ -1,0 +1,327 @@
+{
+  "agent": "domain-flipper",
+  "run_id": "20261019T125144Z-8a0a7d",
+  "generated_at": "2026-10-19T12:52:07+00:00",
+  "date": "2026-10-18",
+  "mode": "live",
+  "sources": {
+    "domain": "whoisfreaks-free",
+    "authority": "openpagerank",
+    "deep_authority": "dataforseo",
+    "availability": "rdap",
+    "appraisal": "humbleworth"
+  },
+  "funnel": {
+    "fetched": 10000,
+    "after_filters": 3319,
+    "after_authority_gate": 5,
+    "available": 5,
+    "deep_enriched": 0,
+    "scored": 5,
+    "shortlisted": 5
+  },
+  "notes": [],
+  "run_url": "https://github.com/davidhamiltonsg-sketch/arbitrage-agents/actions/runs/39255338165",
+  "shortlist": [
+    {
+      "domain": "americanpackagingusa.com",
+      "tld": "com",
+      "drop_date": null,
+      "registrar": null,
+      "source": "whoisfreaks-free",
+      "rank": 2799254,
+      "dr": 15.1,
+      "referring_domains": null,
+      "total_backlinks": null,
+      "spam_score": null,
+      "first_seen": null,
+      "authority_source": "openpagerank",
+      "availability": {
+        "status": "available",
+        "source": "rdap",
+        "checked_at": "2026-10-19T12:51:55+00:00",
+        "server": "https://rdap.verisign.com/com/v1/"
+      },
+      "appraisal": {
+        "status": "denied",
+        "source": "humbleworth",
+        "value": null,
+        "currency": "USD",
+        "comparables": [],
+        "reasons": [],
+        "checked_at": "2026-10-19T12:51:56+00:00",
+        "error": "Replicate rejected REPLICATE_API_TOKEN"
+      },
+      "score": 5,
+      "brandability": 6,
+      "suggested_price": 600,
+      "reasoning": "The domain has moderate brandability due to its clear association with packaging in the USA, but its low DR indicates limited backlink equity.",
+      "wayback": {
+        "status": "ok",
+        "first_year": 2009,
+        "last_year": 2026,
+        "snapshot_months": 81,
+        "years_active": 15,
+        "latest_url": "https://web.archive.org/web/20260204084303/americanpackagingusa.com",
+        "timeline_url": "https://web.archive.org/web/*/americanpackagingusa.com",
+        "checked_at": "2026-10-19T12:52:04+00:00"
+      },
+      "trademark": {
+        "term": "americanpackagingusa",
+        "risk": "low",
+        "flags": [],
+        "summary": "no famous-mark match in the built-in list",
+        "links": {
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=americanpackagingusa",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=americanpackagingusa",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/americanpackagingusa"
+        }
+      },
+      "links": {
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=americanpackagingusa.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=americanpackagingusa.com",
+        "afternic": "https://www.afternic.com/domain/americanpackagingusa.com"
+      }
+    },
+    {
+      "domain": "shoutincanada.com",
+      "tld": "com",
+      "drop_date": null,
+      "registrar": null,
+      "source": "whoisfreaks-free",
+      "rank": 24384616,
+      "dr": 11.4,
+      "referring_domains": null,
+      "total_backlinks": null,
+      "spam_score": null,
+      "first_seen": null,
+      "authority_source": "openpagerank",
+      "availability": {
+        "status": "available",
+        "source": "rdap",
+        "checked_at": "2026-10-19T12:51:55+00:00",
+        "server": "https://rdap.verisign.com/com/v1/"
+      },
+      "appraisal": {
+        "status": "denied",
+        "source": "humbleworth",
+        "value": null,
+        "currency": "USD",
+        "comparables": [],
+        "reasons": [],
+        "checked_at": "2026-10-19T12:51:56+00:00",
+        "error": "Replicate rejected REPLICATE_API_TOKEN"
+      },
+      "score": 5,
+      "brandability": 6,
+      "suggested_price": 500,
+      "reasoning": "The domain has moderate brandability with a clear connection to Canada, but its low DR suggests limited backlink equity.",
+      "wayback": {
+        "status": "ok",
+        "first_year": 2023,
+        "last_year": 2024,
+        "snapshot_months": 9,
+        "years_active": 2,
+        "latest_url": "https://web.archive.org/web/20241209095151/shoutincanada.com",
+        "timeline_url": "https://web.archive.org/web/*/shoutincanada.com",
+        "checked_at": "2026-10-19T12:52:05+00:00"
+      },
+      "trademark": {
+        "term": "shoutincanada",
+        "risk": "low",
+        "flags": [],
+        "summary": "no famous-mark match in the built-in list",
+        "links": {
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=shoutincanada",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=shoutincanada",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/shoutincanada"
+        }
+      },
+      "links": {
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=shoutincanada.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=shoutincanada.com",
+        "afternic": "https://www.afternic.com/domain/shoutincanada.com"
+      }
+    },
+    {
+      "domain": "deuxfood.com",
+      "tld": "com",
+      "drop_date": null,
+      "registrar": null,
+      "source": "whoisfreaks-free",
+      "rank": 48563146,
+      "dr": 10.9,
+      "referring_domains": null,
+      "total_backlinks": null,
+      "spam_score": null,
+      "first_seen": null,
+      "authority_source": "openpagerank",
+      "availability": {
+        "status": "available",
+        "source": "rdap",
+        "checked_at": "2026-10-19T12:51:55+00:00",
+        "server": "https://rdap.verisign.com/com/v1/"
+      },
+      "appraisal": {
+        "status": "denied",
+        "source": "humbleworth",
+        "value": null,
+        "currency": "USD",
+        "comparables": [],
+        "reasons": [],
+        "checked_at": "2026-10-19T12:51:56+00:00",
+        "error": "Replicate rejected REPLICATE_API_TOKEN"
+      },
+      "score": 4,
+      "brandability": 6,
+      "suggested_price": 400,
+      "reasoning": "The domain deuxfood.com has moderate brandability but low domain rating, suggesting limited link equity and potential for commercial use.",
+      "wayback": {
+        "status": "ok",
+        "first_year": 2024,
+        "last_year": 2026,
+        "snapshot_months": 11,
+        "years_active": 3,
+        "latest_url": "https://web.archive.org/web/20260211010443/deuxfood.com",
+        "timeline_url": "https://web.archive.org/web/*/deuxfood.com",
+        "checked_at": "2026-10-19T12:52:05+00:00"
+      },
+      "trademark": {
+        "term": "deuxfood",
+        "risk": "low",
+        "flags": [],
+        "summary": "no famous-mark match in the built-in list",
+        "links": {
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=deuxfood",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=deuxfood",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/deuxfood"
+        }
+      },
+      "links": {
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=deuxfood.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=deuxfood.com",
+        "afternic": "https://www.afternic.com/domain/deuxfood.com"
+      }
+    },
+    {
+      "domain": "yhtfish.com",
+      "tld": "com",
+      "drop_date": null,
+      "registrar": null,
+      "source": "whoisfreaks-free",
+      "rank": 48567612,
+      "dr": 10.9,
+      "referring_domains": null,
+      "total_backlinks": null,
+      "spam_score": null,
+      "first_seen": null,
+      "authority_source": "openpagerank",
+      "availability": {
+        "status": "available",
+        "source": "rdap",
+        "checked_at": "2026-10-19T12:51:55+00:00",
+        "server": "https://rdap.verisign.com/com/v1/"
+      },
+      "appraisal": {
+        "status": "denied",
+        "source": "humbleworth",
+        "value": null,
+        "currency": "USD",
+        "comparables": [],
+        "reasons": [],
+        "checked_at": "2026-10-19T12:51:56+00:00",
+        "error": "Replicate rejected REPLICATE_API_TOKEN"
+      },
+      "score": 4,
+      "brandability": 5,
+      "suggested_price": 300,
+      "reasoning": "The domain has a low DR and lacks known referring domains, which limits its link equity, while its brandability is moderate due to its pronounceability.",
+      "wayback": {
+        "status": "ok",
+        "first_year": 2019,
+        "last_year": 2025,
+        "snapshot_months": 9,
+        "years_active": 4,
+        "latest_url": "https://web.archive.org/web/20250917173257/yhtfish.com",
+        "timeline_url": "https://web.archive.org/web/*/yhtfish.com",
+        "checked_at": "2026-10-19T12:52:05+00:00"
+      },
+      "trademark": {
+        "term": "yhtfish",
+        "risk": "low",
+        "flags": [],
+        "summary": "no famous-mark match in the built-in list",
+        "links": {
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=yhtfish",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=yhtfish",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/yhtfish"
+        }
+      },
+      "links": {
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=yhtfish.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=yhtfish.com",
+        "afternic": "https://www.afternic.com/domain/yhtfish.com"
+      }
+    },
+    {
+      "domain": "dyjzjs.com",
+      "tld": "com",
+      "drop_date": null,
+      "registrar": null,
+      "source": "whoisfreaks-free",
+      "rank": 48557672,
+      "dr": 11.5,
+      "referring_domains": null,
+      "total_backlinks": null,
+      "spam_score": null,
+      "first_seen": null,
+      "authority_source": "openpagerank",
+      "availability": {
+        "status": "available",
+        "source": "rdap",
+        "checked_at": "2026-10-19T12:51:55+00:00",
+        "server": "https://rdap.verisign.com/com/v1/"
+      },
+      "appraisal": {
+        "status": "denied",
+        "source": "humbleworth",
+        "value": null,
+        "currency": "USD",
+        "comparables": [],
+        "reasons": [],
+        "checked_at": "2026-10-19T12:51:56+00:00",
+        "error": "Replicate rejected REPLICATE_API_TOKEN"
+      },
+      "score": 4,
+      "brandability": 3,
+      "suggested_price": 300,
+      "reasoning": "The domain has a low DR and lacks referring domains, making it less appealing for brandability and resale.",
+      "wayback": {
+        "status": "ok",
+        "first_year": 2023,
+        "last_year": 2024,
+        "snapshot_months": 2,
+        "years_active": 2,
+        "latest_url": "https://web.archive.org/web/20240221213248/dyjzjs.com",
+        "timeline_url": "https://web.archive.org/web/*/dyjzjs.com",
+        "checked_at": "2026-10-19T12:52:06+00:00"
+      },
+      "trademark": {
+        "term": "dyjzjs",
+        "risk": "low",
+        "flags": [],
+        "summary": "no famous-mark match in the built-in list",
+        "links": {
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=dyjzjs",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=dyjzjs",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/dyjzjs"
+        }
+      },
+      "links": {
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=dyjzjs.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=dyjzjs.com",
+        "afternic": "https://www.afternic.com/domain/dyjzjs.com"
+      }
+    }
+  ]
+}

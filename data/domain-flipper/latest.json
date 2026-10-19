@@ -1,8 +1,8 @@
 {
   "agent": "domain-flipper",
-  "run_id": "20261018T105026Z-2206ad",
-  "generated_at": "2026-10-18T10:51:40+00:00",
-  "date": "2026-10-17",
+  "run_id": "20261019T125144Z-8a0a7d",
+  "generated_at": "2026-10-19T12:52:07+00:00",
+  "date": "2026-10-18",
   "mode": "live",
   "sources": {
     "domain": "whoisfreaks-free",
@@ -13,24 +13,24 @@
   },
   "funnel": {
     "fetched": 10000,
-    "after_filters": 3437,
-    "after_authority_gate": 14,
-    "available": 14,
+    "after_filters": 3319,
+    "after_authority_gate": 5,
+    "available": 5,
     "deep_enriched": 0,
-    "scored": 14,
+    "scored": 5,
     "shortlisted": 5
   },
   "notes": [],
-  "run_url": "https://github.com/davidhamiltonsg-sketch/arbitrage-agents/actions/runs/39120824997",
+  "run_url": "https://github.com/davidhamiltonsg-sketch/arbitrage-agents/actions/runs/39255338165",
   "shortlist": [
     {
-      "domain": "hapsrooms.com",
+      "domain": "americanpackagingusa.com",
       "tld": "com",
       "drop_date": null,
       "registrar": null,
       "source": "whoisfreaks-free",
-      "rank": 4609468,
-      "dr": 14.0,
+      "rank": 2799254,
+      "dr": 15.1,
       "referring_domains": null,
       "total_backlinks": null,
       "spam_score": null,
@@ -39,7 +39,7 @@
       "availability": {
         "status": "available",
         "source": "rdap",
-        "checked_at": "2026-10-18T10:50:46+00:00",
+        "checked_at": "2026-10-19T12:51:55+00:00",
         "server": "https://rdap.verisign.com/com/v1/"
       },
       "appraisal": {
@@ -49,48 +49,168 @@
         "currency": "USD",
         "comparables": [],
         "reasons": [],
-        "checked_at": "2026-10-18T10:50:47+00:00",
+        "checked_at": "2026-10-19T12:51:56+00:00",
         "error": "Replicate rejected REPLICATE_API_TOKEN"
       },
       "score": 5,
       "brandability": 6,
       "suggested_price": 600,
-      "reasoning": "The domain has moderate brandability but lacks sufficient backlink equity to command a higher value.",
+      "reasoning": "The domain has moderate brandability due to its clear association with packaging in the USA, but its low DR indicates limited backlink equity.",
       "wayback": {
         "status": "ok",
-        "first_year": 2018,
+        "first_year": 2009,
+        "last_year": 2026,
+        "snapshot_months": 81,
+        "years_active": 15,
+        "latest_url": "https://web.archive.org/web/20260204084303/americanpackagingusa.com",
+        "timeline_url": "https://web.archive.org/web/*/americanpackagingusa.com",
+        "checked_at": "2026-10-19T12:52:04+00:00"
+      },
+      "trademark": {
+        "term": "americanpackagingusa",
+        "risk": "low",
+        "flags": [],
+        "summary": "no famous-mark match in the built-in list",
+        "links": {
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=americanpackagingusa",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=americanpackagingusa",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/americanpackagingusa"
+        }
+      },
+      "links": {
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=americanpackagingusa.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=americanpackagingusa.com",
+        "afternic": "https://www.afternic.com/domain/americanpackagingusa.com"
+      }
+    },
+    {
+      "domain": "shoutincanada.com",
+      "tld": "com",
+      "drop_date": null,
+      "registrar": null,
+      "source": "whoisfreaks-free",
+      "rank": 24384616,
+      "dr": 11.4,
+      "referring_domains": null,
+      "total_backlinks": null,
+      "spam_score": null,
+      "first_seen": null,
+      "authority_source": "openpagerank",
+      "availability": {
+        "status": "available",
+        "source": "rdap",
+        "checked_at": "2026-10-19T12:51:55+00:00",
+        "server": "https://rdap.verisign.com/com/v1/"
+      },
+      "appraisal": {
+        "status": "denied",
+        "source": "humbleworth",
+        "value": null,
+        "currency": "USD",
+        "comparables": [],
+        "reasons": [],
+        "checked_at": "2026-10-19T12:51:56+00:00",
+        "error": "Replicate rejected REPLICATE_API_TOKEN"
+      },
+      "score": 5,
+      "brandability": 6,
+      "suggested_price": 500,
+      "reasoning": "The domain has moderate brandability with a clear connection to Canada, but its low DR suggests limited backlink equity.",
+      "wayback": {
+        "status": "ok",
+        "first_year": 2023,
+        "last_year": 2024,
+        "snapshot_months": 9,
+        "years_active": 2,
+        "latest_url": "https://web.archive.org/web/20241209095151/shoutincanada.com",
+        "timeline_url": "https://web.archive.org/web/*/shoutincanada.com",
+        "checked_at": "2026-10-19T12:52:05+00:00"
+      },
+      "trademark": {
+        "term": "shoutincanada",
+        "risk": "low",
+        "flags": [],
+        "summary": "no famous-mark match in the built-in list",
+        "links": {
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=shoutincanada",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=shoutincanada",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/shoutincanada"
+        }
+      },
+      "links": {
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=shoutincanada.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=shoutincanada.com",
+        "afternic": "https://www.afternic.com/domain/shoutincanada.com"
+      }
+    },
+    {
+      "domain": "deuxfood.com",
+      "tld": "com",
+      "drop_date": null,
+      "registrar": null,
+      "source": "whoisfreaks-free",
+      "rank": 48563146,
+      "dr": 10.9,
+      "referring_domains": null,
+      "total_backlinks": null,
+      "spam_score": null,
+      "first_seen": null,
+      "authority_source": "openpagerank",
+      "availability": {
+        "status": "available",
+        "source": "rdap",
+        "checked_at": "2026-10-19T12:51:55+00:00",
+        "server": "https://rdap.verisign.com/com/v1/"
+      },
+      "appraisal": {
+        "status": "denied",
+        "source": "humbleworth",
+        "value": null,
+        "currency": "USD",
+        "comparables": [],
+        "reasons": [],
+        "checked_at": "2026-10-19T12:51:56+00:00",
+        "error": "Replicate rejected REPLICATE_API_TOKEN"
+      },
+      "score": 4,
+      "brandability": 6,
+      "suggested_price": 400,
+      "reasoning": "The domain deuxfood.com has moderate brandability but low domain rating, suggesting limited link equity and potential for commercial use.",
+      "wayback": {
+        "status": "ok",
+        "first_year": 2024,
         "last_year": 2026,
         "snapshot_months": 11,
-        "years_active": 5,
-        "latest_url": "https://web.archive.org/web/20260616175836/hapsrooms.com",
-        "timeline_url": "https://web.archive.org/web/*/hapsrooms.com",
-        "checked_at": "2026-10-18T10:51:06+00:00"
+        "years_active": 3,
+        "latest_url": "https://web.archive.org/web/20260211010443/deuxfood.com",
+        "timeline_url": "https://web.archive.org/web/*/deuxfood.com",
+        "checked_at": "2026-10-19T12:52:05+00:00"
       },
       "trademark": {
-        "term": "hapsrooms",
+        "term": "deuxfood",
         "risk": "low",
         "flags": [],
         "summary": "no famous-mark match in the built-in list",
         "links": {
-          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=hapsrooms",
-          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=hapsrooms",
-          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/hapsrooms"
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=deuxfood",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=deuxfood",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/deuxfood"
         }
       },
       "links": {
-        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=hapsrooms.com",
-        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=hapsrooms.com",
-        "afternic": "https://www.afternic.com/domain/hapsrooms.com"
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=deuxfood.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=deuxfood.com",
+        "afternic": "https://www.afternic.com/domain/deuxfood.com"
       }
     },
     {
-      "domain": "wekivagolfclub.com",
+      "domain": "yhtfish.com",
       "tld": "com",
       "drop_date": null,
       "registrar": null,
       "source": "whoisfreaks-free",
-      "rank": 36466774,
-      "dr": 12.1,
+      "rank": 48567612,
+      "dr": 10.9,
       "referring_domains": null,
       "total_backlinks": null,
       "spam_score": null,
@@ -99,7 +219,7 @@
       "availability": {
         "status": "available",
         "source": "rdap",
-        "checked_at": "2026-10-18T10:50:46+00:00",
+        "checked_at": "2026-10-19T12:51:55+00:00",
         "server": "https://rdap.verisign.com/com/v1/"
       },
       "appraisal": {
@@ -109,48 +229,48 @@
         "currency": "USD",
         "comparables": [],
         "reasons": [],
-        "checked_at": "2026-10-18T10:50:47+00:00",
+        "checked_at": "2026-10-19T12:51:56+00:00",
         "error": "Replicate rejected REPLICATE_API_TOKEN"
       },
-      "score": 5,
-      "brandability": 6,
-      "suggested_price": 600,
-      "reasoning": "The domain has moderate brandability due to its clear association with a golf club, but its low DR indicates limited link equity.",
+      "score": 4,
+      "brandability": 5,
+      "suggested_price": 300,
+      "reasoning": "The domain has a low DR and lacks known referring domains, which limits its link equity, while its brandability is moderate due to its pronounceability.",
       "wayback": {
         "status": "ok",
-        "first_year": 2005,
+        "first_year": 2019,
         "last_year": 2025,
-        "snapshot_months": 66,
-        "years_active": 16,
-        "latest_url": "https://web.archive.org/web/20251018155138/wekivagolfclub.com",
-        "timeline_url": "https://web.archive.org/web/*/wekivagolfclub.com",
-        "checked_at": "2026-10-18T10:51:10+00:00"
+        "snapshot_months": 9,
+        "years_active": 4,
+        "latest_url": "https://web.archive.org/web/20250917173257/yhtfish.com",
+        "timeline_url": "https://web.archive.org/web/*/yhtfish.com",
+        "checked_at": "2026-10-19T12:52:05+00:00"
       },
       "trademark": {
-        "term": "wekivagolfclub",
+        "term": "yhtfish",
         "risk": "low",
         "flags": [],
         "summary": "no famous-mark match in the built-in list",
         "links": {
-          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=wekivagolfclub",
-          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=wekivagolfclub",
-          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/wekivagolfclub"
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=yhtfish",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=yhtfish",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/yhtfish"
         }
       },
       "links": {
-        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=wekivagolfclub.com",
-        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=wekivagolfclub.com",
-        "afternic": "https://www.afternic.com/domain/wekivagolfclub.com"
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=yhtfish.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=yhtfish.com",
+        "afternic": "https://www.afternic.com/domain/yhtfish.com"
       }
     },
     {
-      "domain": "soundtherapyworld.com",
+      "domain": "dyjzjs.com",
       "tld": "com",
       "drop_date": null,
       "registrar": null,
       "source": "whoisfreaks-free",
-      "rank": 45577448,
-      "dr": 12.9,
+      "rank": 48557672,
+      "dr": 11.5,
       "referring_domains": null,
       "total_backlinks": null,
       "spam_score": null,
@@ -159,7 +279,7 @@
       "availability": {
         "status": "available",
         "source": "rdap",
-        "checked_at": "2026-10-18T10:50:46+00:00",
+        "checked_at": "2026-10-19T12:51:55+00:00",
         "server": "https://rdap.verisign.com/com/v1/"
       },
       "appraisal": {
@@ -169,159 +289,38 @@
         "currency": "USD",
         "comparables": [],
         "reasons": [],
-        "checked_at": "2026-10-18T10:50:47+00:00",
+        "checked_at": "2026-10-19T12:51:56+00:00",
         "error": "Replicate rejected REPLICATE_API_TOKEN"
       },
-      "score": 5,
-      "brandability": 7,
-      "suggested_price": 600,
-      "reasoning": "The domain has moderate brandability with a clear and relevant theme, but its low DR indicates limited backlink equity.",
+      "score": 4,
+      "brandability": 3,
+      "suggested_price": 300,
+      "reasoning": "The domain has a low DR and lacks referring domains, making it less appealing for brandability and resale.",
       "wayback": {
         "status": "ok",
-        "first_year": 2007,
-        "last_year": 2025,
-        "snapshot_months": 79,
-        "years_active": 19,
-        "latest_url": "https://web.archive.org/web/20250719091319/soundtherapyworld.com",
-        "timeline_url": "https://web.archive.org/web/*/soundtherapyworld.com",
-        "checked_at": "2026-10-18T10:51:13+00:00"
+        "first_year": 2023,
+        "last_year": 2024,
+        "snapshot_months": 2,
+        "years_active": 2,
+        "latest_url": "https://web.archive.org/web/20240221213248/dyjzjs.com",
+        "timeline_url": "https://web.archive.org/web/*/dyjzjs.com",
+        "checked_at": "2026-10-19T12:52:06+00:00"
       },
       "trademark": {
-        "term": "soundtherapyworld",
+        "term": "dyjzjs",
         "risk": "low",
         "flags": [],
         "summary": "no famous-mark match in the built-in list",
         "links": {
-          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=soundtherapyworld",
-          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=soundtherapyworld",
-          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/soundtherapyworld"
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=dyjzjs",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=dyjzjs",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/dyjzjs"
         }
       },
       "links": {
-        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=soundtherapyworld.com",
-        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=soundtherapyworld.com",
-        "afternic": "https://www.afternic.com/domain/soundtherapyworld.com"
-      }
-    },
-    {
-      "domain": "giaydepcrocs.com",
-      "tld": "com",
-      "drop_date": null,
-      "registrar": null,
-      "source": "whoisfreaks-free",
-      "rank": 35942536,
-      "dr": 12.6,
-      "referring_domains": null,
-      "total_backlinks": null,
-      "spam_score": null,
-      "first_seen": null,
-      "authority_source": "openpagerank",
-      "availability": {
-        "status": "available",
-        "source": "rdap",
-        "checked_at": "2026-10-18T10:50:46+00:00",
-        "server": "https://rdap.verisign.com/com/v1/"
-      },
-      "appraisal": {
-        "status": "denied",
-        "source": "humbleworth",
-        "value": null,
-        "currency": "USD",
-        "comparables": [],
-        "reasons": [],
-        "checked_at": "2026-10-18T10:50:47+00:00",
-        "error": "Replicate rejected REPLICATE_API_TOKEN"
-      },
-      "score": 5,
-      "brandability": 6,
-      "suggested_price": 600,
-      "reasoning": "The domain has moderate brandability with a unique name, but its low DR indicates limited link equity, making it a reasonable investment for niche markets.",
-      "wayback": {
-        "status": "ok",
-        "first_year": 2015,
-        "last_year": 2025,
-        "snapshot_months": 41,
-        "years_active": 9,
-        "latest_url": "https://web.archive.org/web/20250912121855/giaydepcrocs.com",
-        "timeline_url": "https://web.archive.org/web/*/giaydepcrocs.com",
-        "checked_at": "2026-10-18T10:51:17+00:00"
-      },
-      "trademark": {
-        "term": "giaydepcrocs",
-        "risk": "low",
-        "flags": [],
-        "summary": "no famous-mark match in the built-in list",
-        "links": {
-          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=giaydepcrocs",
-          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=giaydepcrocs",
-          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/giaydepcrocs"
-        }
-      },
-      "links": {
-        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=giaydepcrocs.com",
-        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=giaydepcrocs.com",
-        "afternic": "https://www.afternic.com/domain/giaydepcrocs.com"
-      }
-    },
-    {
-      "domain": "thinkuniv.com",
-      "tld": "com",
-      "drop_date": null,
-      "registrar": null,
-      "source": "whoisfreaks-free",
-      "rank": 4134745,
-      "dr": 12.3,
-      "referring_domains": null,
-      "total_backlinks": null,
-      "spam_score": null,
-      "first_seen": null,
-      "authority_source": "openpagerank",
-      "availability": {
-        "status": "available",
-        "source": "rdap",
-        "checked_at": "2026-10-18T10:50:46+00:00",
-        "server": "https://rdap.verisign.com/com/v1/"
-      },
-      "appraisal": {
-        "status": "denied",
-        "source": "humbleworth",
-        "value": null,
-        "currency": "USD",
-        "comparables": [],
-        "reasons": [],
-        "checked_at": "2026-10-18T10:50:47+00:00",
-        "error": "Replicate rejected REPLICATE_API_TOKEN"
-      },
-      "score": 5,
-      "brandability": 7,
-      "suggested_price": 600,
-      "reasoning": "The domain has moderate brandability with a clear and memorable name, but its low DR indicates limited link equity.",
-      "wayback": {
-        "status": "error",
-        "first_year": null,
-        "last_year": null,
-        "snapshot_months": 0,
-        "years_active": 0,
-        "latest_url": null,
-        "timeline_url": "https://web.archive.org/web/*/thinkuniv.com",
-        "checked_at": "2026-10-18T10:51:21+00:00",
-        "error": "network error for https://web.archive.org/cdx/search/cdx?url=thinkuniv.com&output=json&fl=timestamp%2Cstatuscode%2Cmimetype&filter=statuscode%3A200&collapse=timestamp%3A6&limit=2000: <urlopen error [E"
-      },
-      "trademark": {
-        "term": "thinkuniv",
-        "risk": "low",
-        "flags": [],
-        "summary": "no famous-mark match in the built-in list",
-        "links": {
-          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=thinkuniv",
-          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=thinkuniv",
-          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/thinkuniv"
-        }
-      },
-      "links": {
-        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=thinkuniv.com",
-        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=thinkuniv.com",
-        "afternic": "https://www.afternic.com/domain/thinkuniv.com"
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=dyjzjs.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=dyjzjs.com",
+        "afternic": "https://www.afternic.com/domain/dyjzjs.com"
       }
     }
   ]
