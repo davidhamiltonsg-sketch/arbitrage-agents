@@ -1,0 +1,327 @@
+{
+  "agent": "domain-flipper",
+  "run_id": "20261020T112051Z-ad9919",
+  "generated_at": "2026-10-20T11:21:31+00:00",
+  "date": "2026-10-19",
+  "mode": "live",
+  "sources": {
+    "domain": "whoisfreaks-free",
+    "authority": "openpagerank",
+    "deep_authority": "dataforseo",
+    "availability": "rdap",
+    "appraisal": "humbleworth"
+  },
+  "funnel": {
+    "fetched": 10000,
+    "after_filters": 3693,
+    "after_authority_gate": 10,
+    "available": 8,
+    "deep_enriched": 0,
+    "scored": 8,
+    "shortlisted": 5
+  },
+  "notes": [],
+  "run_url": "https://github.com/davidhamiltonsg-sketch/arbitrage-agents/actions/runs/39414276111",
+  "shortlist": [
+    {
+      "domain": "craftlimoncello.com",
+      "tld": "com",
+      "drop_date": null,
+      "registrar": null,
+      "source": "whoisfreaks-free",
+      "rank": 34151842,
+      "dr": 16.9,
+      "referring_domains": null,
+      "total_backlinks": null,
+      "spam_score": null,
+      "first_seen": null,
+      "authority_source": "openpagerank",
+      "availability": {
+        "status": "available",
+        "source": "rdap",
+        "checked_at": "2026-10-20T11:21:11+00:00",
+        "server": "https://rdap.verisign.com/com/v1/"
+      },
+      "appraisal": {
+        "status": "denied",
+        "source": "humbleworth",
+        "value": null,
+        "currency": "USD",
+        "comparables": [],
+        "reasons": [],
+        "checked_at": "2026-10-20T11:21:12+00:00",
+        "error": "Replicate rejected REPLICATE_API_TOKEN"
+      },
+      "score": 5,
+      "brandability": 7,
+      "suggested_price": 600,
+      "reasoning": "The domain 'craftlimoncello.com' has a decent brand appeal for a niche market, but its low DR and unknown backlink profile limit its overall investment potential.",
+      "wayback": {
+        "status": "ok",
+        "first_year": 2023,
+        "last_year": 2025,
+        "snapshot_months": 27,
+        "years_active": 3,
+        "latest_url": "https://web.archive.org/web/20251019015348/craftlimoncello.com",
+        "timeline_url": "https://web.archive.org/web/*/craftlimoncello.com",
+        "checked_at": "2026-10-20T11:21:25+00:00"
+      },
+      "trademark": {
+        "term": "craftlimoncello",
+        "risk": "low",
+        "flags": [],
+        "summary": "no famous-mark match in the built-in list",
+        "links": {
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=craftlimoncello",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=craftlimoncello",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/craftlimoncello"
+        }
+      },
+      "links": {
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=craftlimoncello.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=craftlimoncello.com",
+        "afternic": "https://www.afternic.com/domain/craftlimoncello.com"
+      }
+    },
+    {
+      "domain": "dolphinscribe.com",
+      "tld": "com",
+      "drop_date": null,
+      "registrar": null,
+      "source": "whoisfreaks-free",
+      "rank": 12854554,
+      "dr": 13.7,
+      "referring_domains": null,
+      "total_backlinks": null,
+      "spam_score": null,
+      "first_seen": null,
+      "authority_source": "openpagerank",
+      "availability": {
+        "status": "available",
+        "source": "rdap",
+        "checked_at": "2026-10-20T11:21:11+00:00",
+        "server": "https://rdap.verisign.com/com/v1/"
+      },
+      "appraisal": {
+        "status": "denied",
+        "source": "humbleworth",
+        "value": null,
+        "currency": "USD",
+        "comparables": [],
+        "reasons": [],
+        "checked_at": "2026-10-20T11:21:12+00:00",
+        "error": "Replicate rejected REPLICATE_API_TOKEN"
+      },
+      "score": 5,
+      "brandability": 7,
+      "suggested_price": 600,
+      "reasoning": "The domain 'dolphinscribe.com' is brandable and memorable, but its low DR indicates limited backlink equity.",
+      "wayback": {
+        "status": "ok",
+        "first_year": 2025,
+        "last_year": 2025,
+        "snapshot_months": 1,
+        "years_active": 1,
+        "latest_url": "https://web.archive.org/web/20250923082549/dolphinscribe.com",
+        "timeline_url": "https://web.archive.org/web/*/dolphinscribe.com",
+        "checked_at": "2026-10-20T11:21:26+00:00"
+      },
+      "trademark": {
+        "term": "dolphinscribe",
+        "risk": "low",
+        "flags": [],
+        "summary": "no famous-mark match in the built-in list",
+        "links": {
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=dolphinscribe",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=dolphinscribe",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/dolphinscribe"
+        }
+      },
+      "links": {
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=dolphinscribe.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=dolphinscribe.com",
+        "afternic": "https://www.afternic.com/domain/dolphinscribe.com"
+      }
+    },
+    {
+      "domain": "pokerhights.com",
+      "tld": "com",
+      "drop_date": null,
+      "registrar": null,
+      "source": "whoisfreaks-free",
+      "rank": 10181890,
+      "dr": 13.8,
+      "referring_domains": null,
+      "total_backlinks": null,
+      "spam_score": null,
+      "first_seen": null,
+      "authority_source": "openpagerank",
+      "availability": {
+        "status": "available",
+        "source": "rdap",
+        "checked_at": "2026-10-20T11:21:12+00:00",
+        "server": "https://rdap.verisign.com/com/v1/"
+      },
+      "appraisal": {
+        "status": "denied",
+        "source": "humbleworth",
+        "value": null,
+        "currency": "USD",
+        "comparables": [],
+        "reasons": [],
+        "checked_at": "2026-10-20T11:21:12+00:00",
+        "error": "Replicate rejected REPLICATE_API_TOKEN"
+      },
+      "score": 5,
+      "brandability": 7,
+      "suggested_price": 600,
+      "reasoning": "The domain 'pokerhights.com' has moderate brandability due to its clear association with poker, but its low DR indicates limited link equity.",
+      "wayback": {
+        "status": "ok",
+        "first_year": 2011,
+        "last_year": 2025,
+        "snapshot_months": 23,
+        "years_active": 12,
+        "latest_url": "https://web.archive.org/web/20250712201739/pokerhights.com",
+        "timeline_url": "https://web.archive.org/web/*/pokerhights.com",
+        "checked_at": "2026-10-20T11:21:26+00:00"
+      },
+      "trademark": {
+        "term": "pokerhights",
+        "risk": "low",
+        "flags": [],
+        "summary": "no famous-mark match in the built-in list",
+        "links": {
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=pokerhights",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=pokerhights",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/pokerhights"
+        }
+      },
+      "links": {
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=pokerhights.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=pokerhights.com",
+        "afternic": "https://www.afternic.com/domain/pokerhights.com"
+      }
+    },
+    {
+      "domain": "generalawares.com",
+      "tld": "com",
+      "drop_date": null,
+      "registrar": null,
+      "source": "whoisfreaks-free",
+      "rank": 26648114,
+      "dr": 11.9,
+      "referring_domains": null,
+      "total_backlinks": null,
+      "spam_score": null,
+      "first_seen": null,
+      "authority_source": "openpagerank",
+      "availability": {
+        "status": "available",
+        "source": "rdap",
+        "checked_at": "2026-10-20T11:21:11+00:00",
+        "server": "https://rdap.verisign.com/com/v1/"
+      },
+      "appraisal": {
+        "status": "denied",
+        "source": "humbleworth",
+        "value": null,
+        "currency": "USD",
+        "comparables": [],
+        "reasons": [],
+        "checked_at": "2026-10-20T11:21:12+00:00",
+        "error": "Replicate rejected REPLICATE_API_TOKEN"
+      },
+      "score": 5,
+      "brandability": 6,
+      "suggested_price": 600,
+      "reasoning": "The domain has moderate brandability with a clear meaning but lacks strong backlink equity due to an unknown DR and referring domains.",
+      "wayback": {
+        "status": "ok",
+        "first_year": 2022,
+        "last_year": 2026,
+        "snapshot_months": 25,
+        "years_active": 5,
+        "latest_url": "https://web.archive.org/web/20260613025748/generalawares.com",
+        "timeline_url": "https://web.archive.org/web/*/generalawares.com",
+        "checked_at": "2026-10-20T11:21:27+00:00"
+      },
+      "trademark": {
+        "term": "generalawares",
+        "risk": "low",
+        "flags": [],
+        "summary": "no famous-mark match in the built-in list",
+        "links": {
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=generalawares",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=generalawares",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/generalawares"
+        }
+      },
+      "links": {
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=generalawares.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=generalawares.com",
+        "afternic": "https://www.afternic.com/domain/generalawares.com"
+      }
+    },
+    {
+      "domain": "artesecontextos.com",
+      "tld": "com",
+      "drop_date": null,
+      "registrar": null,
+      "source": "whoisfreaks-free",
+      "rank": 1370856,
+      "dr": 14.4,
+      "referring_domains": null,
+      "total_backlinks": null,
+      "spam_score": null,
+      "first_seen": null,
+      "authority_source": "openpagerank",
+      "availability": {
+        "status": "available",
+        "source": "rdap",
+        "checked_at": "2026-10-20T11:21:11+00:00",
+        "server": "https://rdap.verisign.com/com/v1/"
+      },
+      "appraisal": {
+        "status": "denied",
+        "source": "humbleworth",
+        "value": null,
+        "currency": "USD",
+        "comparables": [],
+        "reasons": [],
+        "checked_at": "2026-10-20T11:21:12+00:00",
+        "error": "Replicate rejected REPLICATE_API_TOKEN"
+      },
+      "score": 5,
+      "brandability": 6,
+      "suggested_price": 600,
+      "reasoning": "The domain has moderate brandability with a unique sound, but its low DR and unknown backlink profile limit its overall investment appeal.",
+      "wayback": {
+        "status": "ok",
+        "first_year": 2015,
+        "last_year": 2021,
+        "snapshot_months": 21,
+        "years_active": 6,
+        "latest_url": "https://web.archive.org/web/20210121115552/artesecontextos.com",
+        "timeline_url": "https://web.archive.org/web/*/artesecontextos.com",
+        "checked_at": "2026-10-20T11:21:31+00:00"
+      },
+      "trademark": {
+        "term": "artesecontextos",
+        "risk": "low",
+        "flags": [],
+        "summary": "no famous-mark match in the built-in list",
+        "links": {
+          "uspto": "https://tmsearch.uspto.gov/search/search-results?query=artesecontextos",
+          "wipo": "https://branddb.wipo.int/en/quicksearch?by=brandName&v=artesecontextos",
+          "euipo": "https://euipo.europa.eu/eSearch/#basic/1+1+1+1/100+100+100+100/artesecontextos"
+        }
+      },
+      "links": {
+        "godaddy": "https://www.godaddy.com/domainsearch/find?domainToCheck=artesecontextos.com",
+        "namecheap": "https://www.namecheap.com/domains/registration/results/?domain=artesecontextos.com",
+        "afternic": "https://www.afternic.com/domain/artesecontextos.com"
+      }
+    }
+  ]
+}
