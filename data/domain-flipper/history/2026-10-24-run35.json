@@ -1,0 +1,24 @@
+{
+  "agent": "domain-flipper",
+  "run_id": "20261024T104436Z-6a3d44",
+  "generated_at": "2026-10-24T11:11:57+00:00",
+  "date": "2026-10-23",
+  "mode": "live",
+  "sources": {
+    "domain": "whoisfreaks-free",
+    "authority": "openpagerank",
+    "deep_authority": "dataforseo",
+    "availability": "rdap",
+    "appraisal": "humbleworth"
+  },
+  "funnel": {
+    "fetched": 10000,
+    "after_filters": 3461,
+    "after_authority_gate": 0,
+    "scored": 0,
+    "shortlisted": 0
+  },
+  "notes": [],
+  "run_url": "https://github.com/davidhamiltonsg-sketch/arbitrage-agents/actions/runs/40087102179",
+  "shortlist": []
+}
